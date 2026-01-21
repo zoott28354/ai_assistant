@@ -1,0 +1,3 @@
+@echo off
+echo Avvio ai_assistant...
+start venv\Scripts\pythonw.exe main.py

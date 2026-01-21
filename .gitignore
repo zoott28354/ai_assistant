@@ -1,0 +1,22 @@
+# Ambienti Virtuali (NON caricare mai questi)
+venv/
+env/
+.env
+
+# File di dati privati
+history_db.json
+
+# Cache di Python e file temporanei
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# File di sistema
+.DS_Store
+Thumbs.db
+
+# Eventuali cartelle di build se userai PyInstaller in futuro
+dist/
+build/
+*.spec

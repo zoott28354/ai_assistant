@@ -1,0 +1,10 @@
+setuptools
+wheel
+PyQt6
+ollama
+openai
+mss
+pyperclip
+pyautogui
+Pillow
+requests

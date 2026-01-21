@@ -20,3 +20,4 @@ Thumbs.db
 dist/
 build/
 *.spec
+start_ai_assistant.bat

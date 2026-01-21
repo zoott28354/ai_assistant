@@ -27,7 +27,7 @@ Un potente assistente AI locale per Windows progettato per l'analisi visiva e te
 Se non desideri installare Python o gestire script, puoi scaricare la versione già compilata e pronta all'uso:
 
 1. Vai nella sezione **[Releases](https://github.com/TUO_UTENTE/ai_assistant/releases)** di questo repository.
-2. Scarica il file **`AI_Assistant_V1.exe`**.
+2. Scarica il file **`AI_Assistant_v2.1.1.exe`**.
 3. **Avviso Windows:** Trattandosi di un software non firmato digitalmente, Windows Defender potrebbe mostrare un avviso. Clicca su *"Ulteriori informazioni"* e poi su *"Esegui comunque"*.
 
 ---

@@ -27,6 +27,15 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QT
 from PyQt6.QtCore import Qt, QRect, QThread, pyqtSignal
 from PyQt6.QtGui import QAction, QIcon
 
+# --- FUNZIONE PER RISORSE EXE ---
+def resource_path(relative_path):
+    """ Ottiene il percorso assoluto delle risorse, fondamentale per PyInstaller """
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 class AIBackend:
     OLLAMA = "Ollama"
     LM_STUDIO = "LM Studio"
@@ -74,7 +83,6 @@ STYLE_SHEET = """
     QMenu::item:selected { background-color: #0078d4; }
 """
 
-# --- FORMATTAZIONE TESTO ---
 def format_ai_response(text):
     text = re.sub(r'\*\*(.*?)\*\*', r'<b style="color: #ffca28;">\1</b>', text)
     lines = text.split('\n')
@@ -90,7 +98,6 @@ def format_ai_response(text):
             formatted_lines.append(line)
     return '<br>'.join(formatted_lines)
 
-# --- WORKER AI ---
 class AIWorker(QThread):
     finished = pyqtSignal(str, list)
     def __init__(self, history, model, backend):
@@ -105,7 +112,6 @@ class AIWorker(QThread):
             else:
                 base_url = "http://localhost:1234/v1" if self.backend == AIBackend.LM_STUDIO else "http://localhost:8033/v1"
                 client = OpenAI(base_url=base_url, api_key="sk-no-key-required")
-                
                 msgs = []
                 for m in self.history:
                     if 'images' in m and m['images']:
@@ -116,16 +122,13 @@ class AIWorker(QThread):
                         msgs.append({"role": m['role'], "content": content})
                     else:
                         msgs.append({"role": m['role'], "content": m['content']})
-                
                 comp = client.chat.completions.create(model=self.model, messages=msgs)
                 answer = comp.choices[0].message.content
-            
             self.history.append({'role': 'assistant', 'content': answer})
             self.finished.emit(answer, self.history)
         except Exception as e:
             self.finished.emit(f"Errore [{self.backend}]: {str(e)}", self.history)
 
-# --- SNIPPING TOOL ---
 class SnippingTool(QWidget):
     def __init__(self, callback):
         super().__init__()
@@ -162,24 +165,20 @@ class SnippingTool(QWidget):
                 img.save(buf, format="PNG")
                 self.callback(buf.getvalue(), False)
 
-# --- FINESTRA CHAT ---
 class ChatWindow(QWidget):
     history_updated = pyqtSignal(int, list)
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("ai_snippet v2.1")
+        self.setWindowTitle("AI Assistant - Versione 2.1.1 - EXE Icon Fix")
         self.resize(550, 750)
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
         self.setStyleSheet(STYLE_SHEET)
-        
         layout = QVBoxLayout()
         self.chat_display = QTextBrowser()
         self.chat_display.setOpenExternalLinks(True)
         layout.addWidget(self.chat_display)
-        
         self.status_label = QLabel("Pronto")
         layout.addWidget(self.status_label)
-        
         self.input_field = QLineEdit()
         self.input_field.setPlaceholderText("Chiedi all'AI...")
         self.input_field.returnPressed.connect(self.send_msg)
@@ -219,17 +218,10 @@ class ChatWindow(QWidget):
     def append_view(self, sender, text):
         color = "#4fc3f7" if sender == "AI" else "#81c784"
         formatted_text = format_ai_response(text)
-        html = f"""
-        <div style='margin-bottom: 20px;'>
-            <b style='color:{color}; font-size: 15px;'>{sender}:</b><br>
-            <div style='margin-top: 5px; color: #ffffff;'>{formatted_text}</div>
-        </div>
-        <hr style='border: 0; border-top: 1px solid #333;'>
-        """
+        html = f"<div style='margin-bottom: 20px;'><b style='color:{color}; font-size: 15px;'>{sender}:</b><br><div style='margin-top: 5px; color: #ffffff;'>{formatted_text}</div></div><hr style='border: 0; border-top: 1px solid #333;'>"
         self.chat_display.append(html)
         self.chat_display.verticalScrollBar().setValue(self.chat_display.verticalScrollBar().maximum())
 
-# --- APPLICAZIONE PRINCIPALE ---
 class MainApp:
     def __init__(self):
         self.app = QApplication(sys.argv)
@@ -237,16 +229,15 @@ class MainApp:
         self.active_backend = AIBackend.OLLAMA
         self.active_model = ""
         self.sessions = []
-        
         self.load_history_from_disk()
         self.chat_window = ChatWindow()
         self.chat_window.history_updated.connect(self.save_updated_history)
         
-        # --- FIX ICONA PERSONALIZZATA ---
-        icon_path = "ai_assistant.ico"
-        icon = QIcon(icon_path) if os.path.exists(icon_path) else self.app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
-        self.tray = QSystemTrayIcon(icon)
-        self.chat_window.setWindowIcon(icon) # Imposta l'icona anche alla finestra chat
+        # Gestione Icona (Sia Tray che Finestra)
+        icon_path = resource_path("ai_assistant.ico")
+        self.app_icon = QIcon(icon_path) if os.path.exists(icon_path) else self.app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
+        self.tray = QSystemTrayIcon(self.app_icon)
+        self.chat_window.setWindowIcon(self.app_icon)
         
         self.refresh_mods()
         self.update_menu()
@@ -259,8 +250,7 @@ class MainApp:
                     loaded = json.load(f)
                     for s in loaded:
                         for m in s['history']:
-                            if 'images' in m:
-                                m['images'] = [base64.b64decode(img) for img in m['images']]
+                            if 'images' in m: m['images'] = [base64.b64decode(img) for img in m['images']]
                     self.sessions = loaded
             except: pass
 
@@ -273,30 +263,16 @@ class MainApp:
             session_copy['history'] = []
             for m in s['history']:
                 m_copy = m.copy()
-                if 'images' in m_copy:
-                    m_copy['images'] = [base64.b64encode(img).decode('utf-8') if isinstance(img, bytes) else img for img in m_copy['images']]
+                if 'images' in m_copy: m_copy['images'] = [base64.b64encode(img).decode('utf-8') if isinstance(img, bytes) else img for img in m_copy['images']]
                 session_copy['history'].append(m_copy)
             temp_sessions.append(session_copy)
-        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-            json.dump(temp_sessions, f, indent=4, ensure_ascii=False)
-
-    def clear_all_history(self):
-        reply = QMessageBox.question(None, 'Conferma', "Cancellare permanentemente tutta la cronologia?", 
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        if reply == QMessageBox.StandardButton.Yes:
-            self.sessions = []
-            if os.path.exists(HISTORY_FILE): os.remove(HISTORY_FILE)
-            self.update_menu()
+        with open(HISTORY_FILE, "w", encoding="utf-8") as f: json.dump(temp_sessions, f, indent=4, ensure_ascii=False)
 
     def refresh_mods(self):
         try:
-            if self.active_backend == AIBackend.OLLAMA:
-                ms = [m['model'] if isinstance(m, dict) else m.model for m in ollama.list().get('models', [])]
-            elif self.active_backend == AIBackend.LM_STUDIO:
-                ms = [m['id'] for m in requests.get("http://localhost:1234/v1/models").json()['data']]
-            elif self.active_backend == AIBackend.LLAMA_CPP:
-                ms = [m['id'] for m in requests.get("http://localhost:8033/v1/models").json()['data']]
-            
+            if self.active_backend == AIBackend.OLLAMA: ms = [m['model'] if isinstance(m, dict) else m.model for m in ollama.list().get('models', [])]
+            elif self.active_backend == AIBackend.LM_STUDIO: ms = [m['id'] for m in requests.get("http://localhost:1234/v1/models").json()['data']]
+            elif self.active_backend == AIBackend.LLAMA_CPP: ms = [m['id'] for m in requests.get("http://localhost:8033/v1/models").json()['data']]
             if ms:
                 if self.active_model not in ms: self.active_model = ms[0]
             return ms
@@ -307,60 +283,49 @@ class MainApp:
         m.addAction("📸 Analizza Area (Rettangolo)", self.start_vision)
         m.addAction("📋 Analizza Testo Copiato", self.start_text_grab)
         m.addSeparator()
-        
         bk = m.addMenu("⚙️ Motore AI")
         for b in [AIBackend.OLLAMA, AIBackend.LM_STUDIO, AIBackend.LLAMA_CPP]:
             a = bk.addAction(b); a.setCheckable(True); a.setChecked(self.active_backend == b)
             a.triggered.connect(partial(self.set_bk, b))
-            
         mods = self.refresh_mods()
         mm = m.addMenu(f"🤖 Modelli")
         for x in mods:
             a = mm.addAction(x); a.setCheckable(True); a.setChecked(self.active_model == x)
             a.triggered.connect(partial(self.set_mod, x))
-            
         m.addSeparator()
         st = m.addMenu("📜 Storico Chat")
         if not self.sessions: st.addAction("(Vuoto)").setEnabled(False)
         for i, s in enumerate(reversed(self.sessions)):
             idx = len(self.sessions)-1-i
             st.addAction(s['label']).triggered.connect(partial(self.restore, idx))
-            
         m.addSeparator()
-        m.addAction("🗑️ Svuota Tutto lo Storico", self.clear_all_history)
+        m.addAction("🗑️ Svuota Tutto", self.clear_all_history)
         m.addSeparator()
         m.addAction("❌ Esci", self.app.quit)
         self.tray.setContextMenu(m)
 
+    def clear_all_history(self):
+        if QMessageBox.question(None, 'Conferma', "Cancellare tutta la cronologia?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No) == QMessageBox.StandardButton.Yes:
+            self.sessions = []; self.update_menu()
+            if os.path.exists(HISTORY_FILE): os.remove(HISTORY_FILE)
+
     def set_bk(self, b): self.active_backend = b; self.refresh_mods(); self.update_menu()
     def set_mod(self, x): self.active_model = x; self.update_menu()
     def start_vision(self): self.snipper = SnippingTool(self.process)
-    
     def start_text_grab(self):
-        self.tray.contextMenu().hide()
-        QApplication.processEvents()
-        time.sleep(0.4)
-        pyautogui.hotkey('ctrl', 'c')
-        time.sleep(0.3)
+        self.tray.contextMenu().hide(); QApplication.processEvents(); time.sleep(0.4)
+        pyautogui.hotkey('ctrl', 'c'); time.sleep(0.3)
         txt = pyperclip.paste()
-        if txt.strip():
-            p = "Analizza e spiega questo testo. Se straniero, TRADUCILO IN ITALIANO. Suggerisci soluzioni se è un errore. Rispondi in italiano."
-            self.process(f"{p}\n\nTESTO:\n{txt}", True)
+        if txt.strip(): self.process(f"Analizza e spiega questo testo in italiano:\n\n{txt}", True)
 
     def process(self, data, is_txt):
         idx = len(self.sessions)
-        if is_txt:
-            hist = [{'role': 'user', 'content': data}]
+        if is_txt: hist = [{'role': 'user', 'content': data}]
         else:
-            p = "Analizza questa immagine. Se vedi testo in lingua straniera, TRADUCILO IN ITALIANO. Se vedi un errore tecnico, spiega la causa e la soluzione. Se vedi codice, spiegalo. Rispondi sempre in italiano."
+            p = "Analizza questa immagine. Se vedi testo, traducilo in italiano. Spiega errori o codice. Rispondi in italiano."
             hist = [{'role': 'user', 'content': p, 'images': [data]}]
-        
-        # Corretto il calcolo dell'etichetta e della sessione
-        label = f"Sess {idx+1} ({datetime.now().strftime('%d/%m %H:%M')})"
-        self.sessions.append({'label': label, 'history': hist, 'model': self.active_model, 'backend': self.active_backend})
-        
-        self.save_updated_history(idx, hist)
-        self.update_menu()
+        self.sessions.append({'label': f"Sess {idx+1} ({datetime.now().strftime('%d/%m %H:%M')})", 'history': hist, 'model': self.active_model, 'backend': self.active_backend})
+        self.save_updated_history(idx, hist); self.update_menu()
         self.chat_window.load_session(idx, hist, self.active_model, self.active_backend, is_new=True)
 
     def restore(self, i):

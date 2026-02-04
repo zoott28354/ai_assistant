@@ -8,3 +8,4 @@ pyperclip
 pyautogui
 Pillow
 requests
+markdown

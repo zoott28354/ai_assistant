@@ -1,17 +1,18 @@
-# 👁️ AI Assistant (v2.1 - Fluent UI)
+# 👁️ AI Assistant (v3.1 - Fixed)
 
 Un potente assistente AI locale per Windows progettato per l'analisi visiva e testuale immediata. Grazie all'integrazione con i principali motori LLM locali, permette di estrarre informazioni da immagini, tradurre testi e spiegare codice direttamente dal tuo desktop, sfruttando la potenza della tua GPU (ottimizzato per serie RTX 50/40).
 
 
 
 ## ✨ Caratteristiche principali
-* **Fluent UI:** Interfaccia moderna e scura, perfettamente integrata con lo stile di Windows 11.
+* **Modern UI v3.0:** Nuova interfaccia chat a bolle con sidebar per la cronologia.
 * **Analisi Area (Screenshot):** Seleziona un rettangolo sullo schermo per inviarlo all'AI. Ideale per risolvere errori, analizzare grafici o tradurre porzioni di testo non selezionabili.
 * **Analisi Appunti (Clipboard):** Analizza, spiega o traduci istantaneamente il testo che hai appena copiato negli appunti.
 * **Multi-Backend:** Supporto nativo per:
     * **Ollama**
     * **LM Studio** (Porta 1234)
     * **Llama.cpp** (Porta predefinita: 8033)
+    * **Llama-Swap** (Porta 8080)
 * **Privacy Totale:** Nessun dato viene inviato al cloud. Tutto viene elaborato localmente.
 * **Storico Sessioni:** Salva automaticamente le conversazioni in un database locale (`history_db.json`).
 
@@ -27,7 +28,7 @@ Un potente assistente AI locale per Windows progettato per l'analisi visiva e te
 Se non desideri installare Python o gestire script, puoi scaricare la versione già compilata e pronta all'uso:
 
 1. Vai nella sezione **[Releases](https://github.com/TUO_UTENTE/ai_assistant/releases)** di questo repository.
-2. Scarica il file **`AI_Assistant_v2.1.1.exe`**.
+2. Scarica il file **`AI_Assistant_v3.0.exe`**.
 3. **Avviso Windows:** Trattandosi di un software non firmato digitalmente, Windows Defender potrebbe mostrare un avviso. Clicca su *"Ulteriori informazioni"* e poi su *"Esegui comunque"*.
 
 ---

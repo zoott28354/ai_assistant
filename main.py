@@ -11,6 +11,7 @@ import json
 import re
 import mss
 import mss.tools
+import markdown
 from PIL import Image
 from datetime import datetime
 from functools import partial
@@ -23,13 +24,13 @@ HISTORY_FILE = "history_db.json"
 
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextBrowser, 
                              QLineEdit, QPushButton, QLabel, QSystemTrayIcon, QMenu, 
-                             QStyle, QRubberBand, QMessageBox)
-from PyQt6.QtCore import Qt, QRect, QThread, pyqtSignal
-from PyQt6.QtGui import QAction, QIcon
+                             QStyle, QRubberBand, QMessageBox, QListWidget, QListWidgetItem, 
+                             QScrollArea, QFrame, QSizePolicy, QAbstractItemView)
+from PyQt6.QtCore import Qt, QRect, QThread, pyqtSignal, QSize
+from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor
 
 # --- FUNZIONE PER RISORSE EXE ---
 def resource_path(relative_path):
-    """ Ottiene il percorso assoluto delle risorse, fondamentale per PyInstaller """
     try:
         base_path = sys._MEIPASS
     except Exception:
@@ -40,63 +41,168 @@ class AIBackend:
     OLLAMA = "Ollama"
     LM_STUDIO = "LM Studio"
     LLAMA_CPP = "Llama.cpp"
+    LLAMA_SWAP = "Llama-Swap"
 
-# --- STILE WINDOWS 11 FLUENT ---
+# --- STILE WINDOWS 11 FLUENT MODERN ---
 STYLE_SHEET = """
     QWidget { 
-        background-color: #1a1a1a; 
-        color: #f0f0f0; 
+        background-color: #202020; 
+        color: #ececec; 
         font-family: 'Segoe UI Variable', 'Segoe UI', sans-serif; 
     }
-    QTextBrowser { 
-        background-color: #262626; 
-        border: 1px solid #333; 
-        border-radius: 12px; 
-        padding: 15px; 
-        font-size: 14px; 
-        color: #e0e0e0;
+    
+    /* SIDEBAR */
+    QListWidget {
+        background-color: #181818;
+        border-right: 1px solid #2a2a2a;
+        outline: none;
+        padding-top: 10px;
     }
+    QListWidget::item {
+        color: #b0b0b0;
+        padding: 12px 15px;
+        margin: 4px 8px;
+        border-radius: 8px;
+    }
+    QListWidget::item:hover {
+        background-color: #2a2a2a;
+        color: white;
+    }
+    QListWidget::item:selected {
+        background-color: #353535;
+        color: white;
+        border-left: 3px solid #60cdff;
+    }
+
+    /* CHAT AREA */
+    QScrollArea {
+        border: none;
+        background-color: #202020;
+    }
+    
+    /* INPUT */
     QLineEdit { 
-        background-color: #333; 
-        border: 1px solid #444; 
-        padding: 12px; 
-        border-radius: 8px; 
+        background-color: #2d2d2d; 
+        border: 1px solid #3d3d3d; 
+        padding: 12px 18px; 
+        border-radius: 22px; 
         color: #ffffff; 
         font-size: 14px;
+        margin: 10px;
     }
-    QLineEdit:focus { border: 1px solid #0078d4; background-color: #3d3d3d; }
+    QLineEdit:focus { border: 1px solid #60cdff; background-color: #323232; }
+    
     QPushButton { 
-        background-color: #0078d4; 
-        color: white; 
+        background-color: #60cdff; 
+        color: #000000; 
         border: none; 
-        padding: 10px 20px; 
-        border-radius: 8px; 
+        padding: 8px 16px; 
+        border-radius: 6px; 
         font-weight: 600; 
     }
-    QPushButton:hover { background-color: #1085e0; }
+    QPushButton:hover { background-color: #7ad6ff; }
+
+    /* MENU */
     QMenu { 
         background-color: #2b2b2b; 
         border: 1px solid #444; 
         border-radius: 8px; 
     }
     QMenu::item { padding: 8px 25px; color: white; }
-    QMenu::item:selected { background-color: #0078d4; }
+    QMenu::item:selected { background-color: #60cdff; color: black; }
 """
 
-def format_ai_response(text):
-    text = re.sub(r'\*\*(.*?)\*\*', r'<b style="color: #ffca28;">\1</b>', text)
-    lines = text.split('\n')
-    formatted_lines = []
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith('* ') or stripped.startswith('- '):
-            content = stripped[2:]
-            formatted_lines.append(f"<div style='margin-left: 20px; color: #e0e0e0;'><span style='color: #4fc3f7;'>•</span> {content}</div>")
-        elif re.match(r'^\d+\.', stripped):
-            formatted_lines.append(f"<div style='margin-left: 20px; color: #e0e0e0;'><span style='color: #81c784;'>{stripped}</span></div>")
+class MessageWidget(QWidget):
+    def __init__(self, role, content, images=None):
+        super().__init__()
+        self.role = role
+        layout = QVBoxLayout()
+        layout.setContentsMargins(10, 5, 10, 5) # Outer margins
+        
+        # Bubble Container Config
+        container = QFrame()
+        container.setObjectName("msg_container")
+        
+        if role == 'user':
+            layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+            bg_color = "#005fb8" # Windows Blue accent
+            text_color = "#ffffff"
+            border_radius = "18px 18px 4px 18px" # TopLeft, TopRight, BtmRight, BtmLeft
+            lbl_align = Qt.AlignmentFlag.AlignRight
+            label_text = "" # No label inside bubble for user usually
         else:
-            formatted_lines.append(line)
-    return '<br>'.join(formatted_lines)
+            layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            bg_color = "#333333" # Dark Grey
+            text_color = "#f0f0f0"
+            border_radius = "18px 18px 18px 4px"
+            lbl_align = Qt.AlignmentFlag.AlignLeft
+            label_text = "AI"
+
+        container.setStyleSheet(f"""
+            #msg_container {{ 
+                background-color: {bg_color}; 
+                border-radius: {border_radius}; 
+                padding: 12px; 
+            }}
+        """)
+        
+        container.setMaximumWidth(600)
+        container.setMinimumWidth(100)
+
+        clayout = QVBoxLayout(container)
+        clayout.setContentsMargins(5,5,5,5)
+        clayout.setSpacing(8)
+
+        # Role Label (Optional, maybe only for AI)
+        if label_text:
+            lbl_role = QLabel(label_text)
+            lbl_role.setStyleSheet(f"color: #aaaaaa; font-weight: bold; font-size: 10px; margin-bottom: 2px;")
+            clayout.addWidget(lbl_role)
+
+        # Images
+        if images:
+            for img_data in images:
+                try:
+                    if isinstance(img_data, str): img_bytes = base64.b64decode(img_data)
+                    else: img_bytes = img_data
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(img_bytes)
+                    if not pixmap.isNull():
+                        if pixmap.width() > 500: pixmap = pixmap.scaledToWidth(500, Qt.TransformationMode.SmoothTransformation)
+                        img_lbl = QLabel()
+                        img_lbl.setPixmap(pixmap)
+                        # Rounded corners for images too
+                        mask = QPixmap(pixmap.size())
+                        mask.fill(Qt.GlobalColor.transparent)
+                        p = QPainter(mask)
+                        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+                        p.setBrush(QColor("black"))
+                        p.drawRoundedRect(0, 0, pixmap.width(), pixmap.height(), 12, 12)
+                        p.end()
+                        # This image rounding is complex without more code, let's skip mask for now but add style
+                        img_lbl.setStyleSheet("border-radius: 8px;")
+                        clayout.addWidget(img_lbl)
+                except Exception: pass
+
+        # Text Content
+        formatted_html = self.format_text(content)
+        lbl_text = QLabel(formatted_html)
+        lbl_text.setWordWrap(True)
+        lbl_text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        # Use white for user, slightly off-white for AI
+        lbl_text.setStyleSheet(f"color: {text_color}; font-size: 14px; selection-background-color: #ffffff; selection-color: #000000;")
+        
+        clayout.addWidget(lbl_text)
+        layout.addWidget(container)
+        self.setLayout(layout)
+
+    def format_text(self, text):
+        text = text.replace("<", "&lt;").replace(">", "&gt;")
+        text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
+        text = re.sub(r'`(.*?)`', r'<code style="background-color: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 4px;">\1</code>', text)
+        text = re.sub(r'```(.*?)```', r'<pre style="background-color: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;">\1</pre>', text, flags=re.DOTALL)
+        text = text.replace('\n', '<br>')
+        return text
 
 class AIWorker(QThread):
     finished = pyqtSignal(str, list)
@@ -110,7 +216,10 @@ class AIWorker(QThread):
                 res = ollama.chat(model=self.model, messages=self.history)
                 answer = res['message']['content']
             else:
-                base_url = "http://localhost:1234/v1" if self.backend == AIBackend.LM_STUDIO else "http://localhost:8033/v1"
+                if self.backend == AIBackend.LM_STUDIO: base_url = "http://localhost:1234/v1"
+                elif self.backend == AIBackend.LLAMA_SWAP: base_url = "http://localhost:8080/v1"
+                else: base_url = "http://localhost:8033/v1"
+                
                 client = OpenAI(base_url=base_url, api_key="sk-no-key-required")
                 msgs = []
                 for m in self.history:
@@ -165,62 +274,135 @@ class SnippingTool(QWidget):
                 img.save(buf, format="PNG")
                 self.callback(buf.getvalue(), False)
 
-class ChatWindow(QWidget):
+class OllamaChatWindow(QWidget):
     history_updated = pyqtSignal(int, list)
+    session_selected = pyqtSignal(int)
+    new_chat_requested = pyqtSignal()
+
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("AI Assistant - Versione 2.1.1 - EXE Icon Fix")
-        self.resize(550, 750)
-        self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
+        self.setWindowTitle("AI Assistant - v3.1 Fixed")
+        self.resize(900, 700) # Bigger window for sidebar
         self.setStyleSheet(STYLE_SHEET)
-        layout = QVBoxLayout()
-        self.chat_display = QTextBrowser()
-        self.chat_display.setOpenExternalLinks(True)
-        layout.addWidget(self.chat_display)
-        self.status_label = QLabel("Pronto")
-        layout.addWidget(self.status_label)
+        
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
+
+        # --- LEFT SIDEBAR ---
+        self.sidebar_layout = QVBoxLayout()
+        self.sidebar_container = QWidget()
+        self.sidebar_container.setFixedWidth(220)
+        self.sidebar_container.setStyleSheet("background-color: #171717; border-right: 1px solid #333;")
+        self.sidebar_container.setLayout(self.sidebar_layout)
+        
+        # New Chat Button
+        self.btn_new = QPushButton("+ Nuova Chat")
+        self.btn_new.setStyleSheet("background-color: #f0f0f0; color: black; margin: 10px; padding: 8px;")
+        self.btn_new.clicked.connect(self.new_chat_requested.emit)
+        self.sidebar_layout.addWidget(self.btn_new)
+
+        # History List
+        self.history_list = QListWidget()
+        self.history_list.itemClicked.connect(lambda item: self.session_selected.emit(item.data(Qt.ItemDataRole.UserRole)))
+        self.sidebar_layout.addWidget(self.history_list)
+        
+        main_layout.addWidget(self.sidebar_container)
+
+        # --- RIGHT CHAT AREA ---
+        chat_layout = QVBoxLayout()
+        chat_layout.setContentsMargins(0,0,0,0)
+        
+        # Scroll Area for messages
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
+        self.scroll_content = QWidget()
+        self.scroll_vbox = QVBoxLayout(self.scroll_content)
+        self.scroll_vbox.setSpacing(15)
+        self.scroll_vbox.addStretch() # Push messages down
+        self.scroll_area.setWidget(self.scroll_content)
+        
+        chat_layout.addWidget(self.scroll_area)
+        
+        # Input Area - Fixed at bottom
+        input_container = QWidget()
+        input_layout = QHBoxLayout(input_container)
+        input_layout.setContentsMargins(10, 10, 10, 10)
+        
+        self.status_label = QLabel("")
+        self.status_label.setStyleSheet("color: #666; font-size: 11px;")
+        
         self.input_field = QLineEdit()
-        self.input_field.setPlaceholderText("Chiedi all'AI...")
+        self.input_field.setPlaceholderText("Scrivi un messaggio... (Incolla immagini con Ctrl+V)")
         self.input_field.returnPressed.connect(self.send_msg)
-        layout.addWidget(self.input_field)
-        self.setLayout(layout)
+        
+        input_layout.addWidget(self.input_field)
+        chat_layout.addWidget(self.status_label)
+        chat_layout.addWidget(input_container)
+
+        main_layout.addLayout(chat_layout)
+
         self.history, self.idx, self.model, self.backend = [], -1, "", ""
+
+
+    def update_sidebar(self, sessions, current_idx=-1):
+        self.history_list.clear()
+        for i, s in enumerate(reversed(sessions)):
+            real_idx = len(sessions) - 1 - i
+            item = QListWidgetItem(s.get('label', f"Sess {real_idx+1}"))
+            item.setData(Qt.ItemDataRole.UserRole, real_idx)
+            self.history_list.addItem(item)
+            if real_idx == current_idx:
+                item.setSelected(True)
 
     def load_session(self, idx, hist, model, backend, is_new=False):
         self.idx, self.history, self.model, self.backend = idx, hist, model, backend
-        self.chat_display.clear()
+        
+        # Clear chat area
+        while self.scroll_vbox.count() > 1: # Keep the stretch item
+            child = self.scroll_vbox.takeAt(0)
+            if child.widget(): child.widget().deleteLater()
+            
+        # Repopulate
         for m in self.history:
-            self.append_view("AI" if m['role']=='assistant' else "Tu", m['content'])
+            self.add_message_bubble(m['role'], m['content'], m.get('images', []))
+            
         self.show()
         if is_new: self.ask_ai()
+        
+        # Update status
+        self.status_label.setText(f"Modello: {model} | Backend: {backend}")
+
+    def add_message_bubble(self, role, content, images=[]):
+        bubble = MessageWidget(role, content, images)
+        self.scroll_vbox.insertWidget(self.scroll_vbox.count()-1, bubble)
+        # Auto scroll to bottom
+        QApplication.processEvents()
+        self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum())
 
     def send_msg(self):
         txt = self.input_field.text().strip()
         if txt:
             self.history.append({'role': 'user', 'content': txt})
-            self.append_view("Tu", txt)
+            self.add_message_bubble("user", txt)
             self.input_field.clear()
             self.ask_ai()
             self.history_updated.emit(self.idx, self.history)
 
     def ask_ai(self):
-        self.status_label.setText(f"🧠 {self.model} via {self.backend}...")
+        self.status_label.setText(f"Generazione in corso con {self.model}...")
         self.worker = AIWorker(list(self.history), self.model, self.backend)
         self.worker.finished.connect(self.on_res)
         self.worker.start()
 
     def on_res(self, text, hist):
         self.history = hist
-        self.append_view("AI", text)
-        self.status_label.setText("Pronto")
+        self.add_message_bubble("assistant", text)
+        self.status_label.setText(f"Pronto ({self.model})")
         self.history_updated.emit(self.idx, self.history)
 
-    def append_view(self, sender, text):
-        color = "#4fc3f7" if sender == "AI" else "#81c784"
-        formatted_text = format_ai_response(text)
-        html = f"<div style='margin-bottom: 20px;'><b style='color:{color}; font-size: 15px;'>{sender}:</b><br><div style='margin-top: 5px; color: #ffffff;'>{formatted_text}</div></div><hr style='border: 0; border-top: 1px solid #333;'>"
-        self.chat_display.append(html)
-        self.chat_display.verticalScrollBar().setValue(self.chat_display.verticalScrollBar().maximum())
 
 class MainApp:
     def __init__(self):
@@ -230,9 +412,15 @@ class MainApp:
         self.active_model = ""
         self.sessions = []
         self.load_history_from_disk()
-        self.chat_window = ChatWindow()
-        self.chat_window.history_updated.connect(self.save_updated_history)
         
+        self.chat_window = OllamaChatWindow()
+        self.chat_window.history_updated.connect(self.save_updated_history)
+        self.chat_window.session_selected.connect(self.restore)
+        self.chat_window.new_chat_requested.connect(self.start_new_session_ui)
+        
+        # Initial Sidebar Population
+        self.chat_window.update_sidebar(self.sessions)
+
         # Gestione Icona (Sia Tray che Finestra)
         icon_path = resource_path("ai_assistant.ico")
         self.app_icon = QIcon(icon_path) if os.path.exists(icon_path) else self.app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
@@ -242,6 +430,13 @@ class MainApp:
         self.refresh_mods()
         self.update_menu()
         self.tray.show()
+
+    def start_new_session_ui(self):
+        # Starts a temporary empty session visible in UI but not saved until first message
+        # Implementation shortcut: reuse process() with empty data? 
+        # Actually better to just clear UI and set idx to new.
+        # But for now let's just create a new 'Welcome' session to keep it simple
+        self.process("Ciao! Come posso aiutarti oggi?", True)
 
     def load_history_from_disk(self):
         if os.path.exists(HISTORY_FILE):
@@ -267,12 +462,16 @@ class MainApp:
                 session_copy['history'].append(m_copy)
             temp_sessions.append(session_copy)
         with open(HISTORY_FILE, "w", encoding="utf-8") as f: json.dump(temp_sessions, f, indent=4, ensure_ascii=False)
+        
+        # Update sidebar labels if changed (e.g. first message could be title)
+        # self.chat_window.update_sidebar(self.sessions, i) 
 
     def refresh_mods(self):
         try:
             if self.active_backend == AIBackend.OLLAMA: ms = [m['model'] if isinstance(m, dict) else m.model for m in ollama.list().get('models', [])]
             elif self.active_backend == AIBackend.LM_STUDIO: ms = [m['id'] for m in requests.get("http://localhost:1234/v1/models").json()['data']]
             elif self.active_backend == AIBackend.LLAMA_CPP: ms = [m['id'] for m in requests.get("http://localhost:8033/v1/models").json()['data']]
+            elif self.active_backend == AIBackend.LLAMA_SWAP: ms = [m['id'] for m in requests.get("http://localhost:8080/v1/models").json()['data']]
             if ms:
                 if self.active_model not in ms: self.active_model = ms[0]
             return ms
@@ -283,8 +482,10 @@ class MainApp:
         m.addAction("📸 Analizza Area (Rettangolo)", self.start_vision)
         m.addAction("📋 Analizza Testo Copiato", self.start_text_grab)
         m.addSeparator()
+        m.addAction("💬 Apri Chat", self.chat_window.show)
+        m.addSeparator()
         bk = m.addMenu("⚙️ Motore AI")
-        for b in [AIBackend.OLLAMA, AIBackend.LM_STUDIO, AIBackend.LLAMA_CPP]:
+        for b in [AIBackend.OLLAMA, AIBackend.LM_STUDIO, AIBackend.LLAMA_CPP, AIBackend.LLAMA_SWAP]:
             a = bk.addAction(b); a.setCheckable(True); a.setChecked(self.active_backend == b)
             a.triggered.connect(partial(self.set_bk, b))
         mods = self.refresh_mods()
@@ -293,20 +494,12 @@ class MainApp:
             a = mm.addAction(x); a.setCheckable(True); a.setChecked(self.active_model == x)
             a.triggered.connect(partial(self.set_mod, x))
         m.addSeparator()
-        st = m.addMenu("📜 Storico Chat")
-        if not self.sessions: st.addAction("(Vuoto)").setEnabled(False)
-        for i, s in enumerate(reversed(self.sessions)):
-            idx = len(self.sessions)-1-i
-            st.addAction(s['label']).triggered.connect(partial(self.restore, idx))
-        m.addSeparator()
-        m.addAction("🗑️ Svuota Tutto", self.clear_all_history)
-        m.addSeparator()
         m.addAction("❌ Esci", self.app.quit)
         self.tray.setContextMenu(m)
 
     def clear_all_history(self):
         if QMessageBox.question(None, 'Conferma', "Cancellare tutta la cronologia?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No) == QMessageBox.StandardButton.Yes:
-            self.sessions = []; self.update_menu()
+            self.sessions = []; self.chat_window.update_sidebar([])
             if os.path.exists(HISTORY_FILE): os.remove(HISTORY_FILE)
 
     def set_bk(self, b): self.active_backend = b; self.refresh_mods(); self.update_menu()
@@ -325,7 +518,8 @@ class MainApp:
             p = "Analizza questa immagine. Se vedi testo, traducilo in italiano. Spiega errori o codice. Rispondi in italiano."
             hist = [{'role': 'user', 'content': p, 'images': [data]}]
         self.sessions.append({'label': f"Sess {idx+1} ({datetime.now().strftime('%d/%m %H:%M')})", 'history': hist, 'model': self.active_model, 'backend': self.active_backend})
-        self.save_updated_history(idx, hist); self.update_menu()
+        self.save_updated_history(idx, hist) 
+        self.chat_window.update_sidebar(self.sessions, idx)
         self.chat_window.load_session(idx, hist, self.active_model, self.active_backend, is_new=True)
 
     def restore(self, i):

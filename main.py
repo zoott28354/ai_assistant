@@ -21,11 +21,23 @@ from openai import OpenAI
 os.environ["QT_LOGGING_RULES"] = "qt.qpa.window=false"
 os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 HISTORY_FILE = "history_db.json"
+CONFIG_FILE = "config.json"
+
+# Default backend URLs
+DEFAULT_CONFIG = {
+    "backends": {
+        "Ollama": "http://localhost:11434",
+        "LM Studio": "http://localhost:1234/v1",
+        "Llama.cpp": "http://localhost:8033/v1",
+        "Llama-Swap": "http://localhost:8080/v1"
+    }
+}
 
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextBrowser, 
                              QLineEdit, QPushButton, QLabel, QSystemTrayIcon, QMenu, 
                              QStyle, QRubberBand, QMessageBox, QListWidget, QListWidgetItem, 
-                             QScrollArea, QFrame, QSizePolicy, QAbstractItemView)
+                             QScrollArea, QFrame, QSizePolicy, QAbstractItemView, QDialog, 
+                             QFormLayout, QDialogButtonBox)
 from PyQt6.QtCore import Qt, QRect, QThread, pyqtSignal, QSize
 from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor
 
@@ -46,8 +58,8 @@ class AIBackend:
 # --- STILE WINDOWS 11 FLUENT MODERN ---
 STYLE_SHEET = """
     QWidget { 
-        background-color: #202020; 
-        color: #ececec; 
+        background-color: #1a1a1a; 
+        color: #d4d4d4; 
         font-family: 'Segoe UI Variable', 'Segoe UI', sans-serif; 
     }
     
@@ -77,7 +89,7 @@ STYLE_SHEET = """
     /* CHAT AREA */
     QScrollArea {
         border: none;
-        background-color: #202020;
+        background-color: #1a1a1a;
     }
     
     /* INPUT */
@@ -117,37 +129,38 @@ class MessageWidget(QWidget):
         super().__init__()
         self.role = role
         layout = QVBoxLayout()
-        layout.setContentsMargins(10, 5, 10, 5) # Outer margins
+        layout.setContentsMargins(15, 8, 15, 8) # Outer margins
         
-        # Bubble Container Config
+        # Minimalist Container Config (no bubbles, just rectangles)
         container = QFrame()
         container.setObjectName("msg_container")
         
         if role == 'user':
-            layout.setAlignment(Qt.AlignmentFlag.AlignRight)
-            bg_color = "#005fb8" # Windows Blue accent
-            text_color = "#ffffff"
-            border_radius = "18px 18px 4px 18px" # TopLeft, TopRight, BtmRight, BtmLeft
-            lbl_align = Qt.AlignmentFlag.AlignRight
-            label_text = "" # No label inside bubble for user usually
+            layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            bg_color = "#2a2a2a" # Dark grey for user
+            text_color = "#e8e8e8"
+            border_radius = "4px" # Minimal rounding
+            lbl_align = Qt.AlignmentFlag.AlignLeft
+            label_text = "" # No label
         else:
             layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-            bg_color = "#333333" # Dark Grey
-            text_color = "#f0f0f0"
-            border_radius = "18px 18px 18px 4px"
+            bg_color = "#1e1e1e" # Even darker for AI
+            text_color = "#d4d4d4"
+            border_radius = "4px"
             lbl_align = Qt.AlignmentFlag.AlignLeft
-            label_text = "AI"
+            label_text = ""
 
         container.setStyleSheet(f"""
             #msg_container {{ 
                 background-color: {bg_color}; 
                 border-radius: {border_radius}; 
-                padding: 12px; 
+                padding: 16px; 
+                border-left: 2px solid {"#4a9eff" if role == "user" else "#3a3a3a"};
             }}
         """)
         
-        container.setMaximumWidth(600)
-        container.setMinimumWidth(100)
+        # Full width for minimalist design
+        container.setMinimumWidth(200)
 
         clayout = QVBoxLayout(container)
         clayout.setContentsMargins(5,5,5,5)
@@ -206,9 +219,10 @@ class MessageWidget(QWidget):
 
 class AIWorker(QThread):
     finished = pyqtSignal(str, list)
-    def __init__(self, history, model, backend):
+    def __init__(self, history, model, backend, backend_urls):
         super().__init__()
         self.history, self.model, self.backend = history, model, backend
+        self.backend_urls = backend_urls
 
     def run(self):
         try:
@@ -216,9 +230,10 @@ class AIWorker(QThread):
                 res = ollama.chat(model=self.model, messages=self.history)
                 answer = res['message']['content']
             else:
-                if self.backend == AIBackend.LM_STUDIO: base_url = "http://localhost:1234/v1"
-                elif self.backend == AIBackend.LLAMA_SWAP: base_url = "http://localhost:8080/v1"
-                else: base_url = "http://localhost:8033/v1"
+                # Get URL from configuration
+                base_url = self.backend_urls.get("backends", {}).get(self.backend, "")
+                if not base_url:
+                    raise Exception(f"URL non configurato per {self.backend}")
                 
                 client = OpenAI(base_url=base_url, api_key="sk-no-key-required")
                 msgs = []
@@ -237,6 +252,41 @@ class AIWorker(QThread):
             self.finished.emit(answer, self.history)
         except Exception as e:
             self.finished.emit(f"Errore [{self.backend}]: {str(e)}", self.history)
+
+class ConfigDialog(QDialog):
+    def __init__(self, current_config, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Configurazione Backend LLM")
+        self.resize(500, 300)
+        # Use standard dialog flags
+        self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowTitleHint | Qt.WindowType.WindowSystemMenuHint | Qt.WindowType.WindowCloseButtonHint)
+        
+        # Simple neutral style
+        self.setStyleSheet("""
+            QDialog { background-color: #2b2b2b; color: white; }
+            QLabel { color: white; }
+            QLineEdit { background-color: #3d3d3d; color: white; border: 1px solid #555; padding: 5px; }
+            QPushButton { background-color: #0078d4; color: white; padding: 6px 15px; border-radius: 4px; }
+        """)
+        
+        layout = QVBoxLayout(self)
+        form_layout = QFormLayout()
+        
+        self.inputs = {}
+        for name, url in current_config["backends"].items():
+            edit = QLineEdit(url)
+            self.inputs[name] = edit
+            form_layout.addRow(QLabel(f"{name}:"), edit)
+            
+        layout.addLayout(form_layout)
+        
+        btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        btns.accepted.connect(self.accept)
+        btns.rejected.connect(self.reject)
+        layout.addWidget(btns)
+
+    def get_config(self):
+        return {"backends": {n: e.text().strip() for n, e in self.inputs.items()}}
 
 class SnippingTool(QWidget):
     def __init__(self, callback):
@@ -279,11 +329,12 @@ class OllamaChatWindow(QWidget):
     session_selected = pyqtSignal(int)
     new_chat_requested = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, backend_urls):
         super().__init__()
         self.setWindowTitle("AI Assistant - v3.1 Fixed")
         self.resize(900, 700) # Bigger window for sidebar
         self.setStyleSheet(STYLE_SHEET)
+        self.backend_urls = backend_urls
         
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0,0,0,0)
@@ -393,7 +444,7 @@ class OllamaChatWindow(QWidget):
 
     def ask_ai(self):
         self.status_label.setText(f"Generazione in corso con {self.model}...")
-        self.worker = AIWorker(list(self.history), self.model, self.backend)
+        self.worker = AIWorker(list(self.history), self.model, self.backend, self.backend_urls)
         self.worker.finished.connect(self.on_res)
         self.worker.start()
 
@@ -411,9 +462,13 @@ class MainApp:
         self.active_backend = AIBackend.OLLAMA
         self.active_model = ""
         self.sessions = []
+        
+        # Load configuration
+        self.backend_urls = self.load_config()
+        
         self.load_history_from_disk()
         
-        self.chat_window = OllamaChatWindow()
+        self.chat_window = OllamaChatWindow(self.backend_urls)
         self.chat_window.history_updated.connect(self.save_updated_history)
         self.chat_window.session_selected.connect(self.restore)
         self.chat_window.new_chat_requested.connect(self.start_new_session_ui)
@@ -437,6 +492,41 @@ class MainApp:
         # Actually better to just clear UI and set idx to new.
         # But for now let's just create a new 'Welcome' session to keep it simple
         self.process("Ciao! Come posso aiutarti oggi?", True)
+
+    def load_config(self):
+        """Load backend configuration from config.json or return defaults"""
+        if os.path.exists(CONFIG_FILE):
+            try:
+                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except:
+                pass
+        return DEFAULT_CONFIG.copy()
+    
+    def save_config(self, config):
+        """Save backend configuration to config.json"""
+        try:
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(config, f, indent=4, ensure_ascii=False)
+            self.backend_urls = config
+            QMessageBox.information(None, "Configurazione", "Configurazione salvata con successo!")
+        except Exception as e:
+            QMessageBox.warning(None, "Errore", f"Errore nel salvataggio: {str(e)}")
+    
+    def open_config_dialog(self):
+        """Open configuration dialog"""
+        # Close search menu to avoid focus issues
+        self.tray.contextMenu().hide()
+        
+        # Create dialog with chat_window as parent if it exists to improve centering
+        parent = self.chat_window if self.chat_window.isVisible() else None
+        dialog = ConfigDialog(self.backend_urls, parent)
+        
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            new_config = dialog.get_config()
+            self.save_config(new_config)
+            self.refresh_mods()
+            self.update_menu()
 
     def load_history_from_disk(self):
         if os.path.exists(HISTORY_FILE):
@@ -468,10 +558,14 @@ class MainApp:
 
     def refresh_mods(self):
         try:
-            if self.active_backend == AIBackend.OLLAMA: ms = [m['model'] if isinstance(m, dict) else m.model for m in ollama.list().get('models', [])]
-            elif self.active_backend == AIBackend.LM_STUDIO: ms = [m['id'] for m in requests.get("http://localhost:1234/v1/models").json()['data']]
-            elif self.active_backend == AIBackend.LLAMA_CPP: ms = [m['id'] for m in requests.get("http://localhost:8033/v1/models").json()['data']]
-            elif self.active_backend == AIBackend.LLAMA_SWAP: ms = [m['id'] for m in requests.get("http://localhost:8080/v1/models").json()['data']]
+            if self.active_backend == AIBackend.OLLAMA: 
+                ms = [m['model'] if isinstance(m, dict) else m.model for m in ollama.list().get('models', [])]
+            else:
+                # Use configured URL
+                base_url = self.backend_urls.get("backends", {}).get(self.active_backend, "")
+                if not base_url:
+                    return ["URL non configurato"]
+                ms = [m['id'] for m in requests.get(f"{base_url.rstrip('/v1')}/v1/models").json()['data']]
             if ms:
                 if self.active_model not in ms: self.active_model = ms[0]
             return ms
@@ -483,6 +577,8 @@ class MainApp:
         m.addAction("📋 Analizza Testo Copiato", self.start_text_grab)
         m.addSeparator()
         m.addAction("💬 Apri Chat", self.chat_window.show)
+        m.addSeparator()
+        m.addAction("⚙️ Configura Backend", self.open_config_dialog)
         m.addSeparator()
         bk = m.addMenu("⚙️ Motore AI")
         for b in [AIBackend.OLLAMA, AIBackend.LM_STUDIO, AIBackend.LLAMA_CPP, AIBackend.LLAMA_SWAP]:

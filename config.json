@@ -1,0 +1,8 @@
+{
+    "backends": {
+        "Ollama": "http://localhost:11434",
+        "LM Studio": "http://localhost:1234/v1",
+        "Llama.cpp": "http://localhost:8033/v1",
+        "Llama-Swap": "http://localhost:8090/v1"
+    }
+}

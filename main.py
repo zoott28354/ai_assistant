@@ -227,10 +227,10 @@ class AIWorker(QThread):
     def run(self):
         try:
             if self.backend == AIBackend.OLLAMA:
-                res = ollama.chat(model=self.model, messages=self.history)
+                # Fix: stream=False è fondamentale per non bloccare il programma
+                res = ollama.chat(model=self.model, messages=self.history, stream=False)
                 answer = res['message']['content']
             else:
-                # Get URL from configuration
                 base_url = self.backend_urls.get("backends", {}).get(self.backend, "")
                 if not base_url:
                     raise Exception(f"URL non configurato per {self.backend}")
@@ -248,6 +248,7 @@ class AIWorker(QThread):
                         msgs.append({"role": m['role'], "content": m['content']})
                 comp = client.chat.completions.create(model=self.model, messages=msgs)
                 answer = comp.choices[0].message.content
+
             self.history.append({'role': 'assistant', 'content': answer})
             self.finished.emit(answer, self.history)
         except Exception as e:
@@ -331,7 +332,7 @@ class OllamaChatWindow(QWidget):
 
     def __init__(self, backend_urls):
         super().__init__()
-        self.setWindowTitle("AI Assistant - v3.1 Fixed")
+        self.setWindowTitle("AI Assistant - v3.2")
         self.resize(900, 700) # Bigger window for sidebar
         self.setStyleSheet(STYLE_SHEET)
         self.backend_urls = backend_urls

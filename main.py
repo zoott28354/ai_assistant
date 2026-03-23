@@ -34,7 +34,8 @@ DEFAULT_CONFIG = {
         "Ollama": "http://localhost:11434",
         "LM Studio": "http://localhost:1234/v1",
         "Llama.cpp": "http://localhost:8033/v1",
-        "Llama-Swap": "http://localhost:8080/v1"
+        "Llama-Swap": "http://localhost:8080/v1",
+        "Compatibile OpenAI": ""
     }
 }
 
@@ -106,7 +107,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QT
                              QLineEdit, QPushButton, QLabel, QSystemTrayIcon, QMenu, 
                              QStyle, QRubberBand, QMessageBox, QListWidget, QListWidgetItem, 
                              QScrollArea, QFrame, QSizePolicy, QAbstractItemView, QDialog, 
-                             QFormLayout, QDialogButtonBox, QSplitter)
+                             QFormLayout, QDialogButtonBox, QSplitter, QGridLayout)
 from PyQt6.QtCore import Qt, QRect, QThread, pyqtSignal, pyqtSlot, QObject, QSize, QTimer, QBuffer, QIODevice
 from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor
 from PyQt6.QtWebChannel import QWebChannel
@@ -162,6 +163,42 @@ def image_to_png_bytes(image):
     image.save(buffer, format="PNG")
     return buffer.getvalue()
 
+
+def openai_models_url(base_url):
+    base = (base_url or "").strip().rstrip("/")
+    if not base:
+        return ""
+    if base.endswith("/v1"):
+        return f"{base}/models"
+    return f"{base}/v1/models"
+
+
+def test_backend_connection(backend_name, url, timeout=4):
+    cleaned_url = (url or "").strip()
+    if not cleaned_url:
+        return False, "URL non configurato"
+
+    try:
+        if backend_name == AIBackend.OLLAMA:
+            response = requests.get(f"{cleaned_url.rstrip('/')}/api/tags", timeout=timeout)
+            response.raise_for_status()
+            models = [m.get("model", "") for m in response.json().get("models", []) if m.get("model")]
+        else:
+            response = requests.get(openai_models_url(cleaned_url), timeout=timeout)
+            response.raise_for_status()
+            models = [m.get("id", "") for m in response.json().get("data", []) if m.get("id")]
+        if models:
+            return True, f"{len(models)} modelli trovati"
+        return True, "Connesso, nessun modello rilevato"
+    except requests.exceptions.Timeout:
+        return False, "Timeout"
+    except requests.exceptions.ConnectionError:
+        return False, "Offline"
+    except requests.exceptions.HTTPError:
+        return False, "Risposta non valida"
+    except Exception:
+        return False, "Connessione fallita"
+
 # --- FUNZIONE PER RISORSE EXE ---
 def resource_path(relative_path):
     try:
@@ -175,6 +212,7 @@ class AIBackend:
     LM_STUDIO = "LM Studio"
     LLAMA_CPP = "Llama.cpp"
     LLAMA_SWAP = "Llama-Swap"
+    OPENAI_COMPATIBLE = "Compatibile OpenAI"
 
 # --- STILE MODERNO WINDOWS 11 FLUENT ---
 STYLE_SHEET = """
@@ -569,33 +607,151 @@ class ConfigDialog(QDialog):
     def __init__(self, current_config, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Configurazione Backend LLM")
-        self.resize(500, 300)
-        # Use standard dialog flags
+        self.resize(760, 420)
         self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowTitleHint | Qt.WindowType.WindowSystemMenuHint | Qt.WindowType.WindowCloseButtonHint)
-        
-        # Simple neutral style
         self.setStyleSheet("""
-            QDialog { background-color: #2b2b2b; color: white; }
-            QLabel { color: white; }
-            QLineEdit { background-color: #3d3d3d; color: white; border: 1px solid #555; padding: 5px; }
-            QPushButton { background-color: #0078d4; color: white; padding: 6px 15px; border-radius: 4px; }
+            QDialog {
+                background-color: #15191f;
+                color: #e7edf5;
+            }
+            QLabel {
+                color: #dce6f0;
+            }
+            QLabel#dialog_title {
+                color: #f3f7fb;
+                font-size: 22px;
+                font-weight: 700;
+            }
+            QLabel#dialog_subtitle {
+                color: #91a3b7;
+                font-size: 12px;
+            }
+            QLabel[role="backend_name"] {
+                color: #f3f7fb;
+                font-size: 13px;
+                font-weight: 700;
+                padding-top: 8px;
+            }
+            QLabel[role="backend_status"] {
+                color: #8ea1b5;
+                font-size: 11px;
+                padding: 1px 2px 0 2px;
+            }
+            QLineEdit {
+                min-height: 38px;
+                background-color: #202732;
+                color: #eef4fb;
+                border: 1px solid #2d3948;
+                border-radius: 10px;
+                padding: 0 12px;
+                selection-background-color: #2d6eb2;
+            }
+            QLineEdit:focus {
+                border: 1px solid #4f83b8;
+            }
+            QPushButton {
+                min-height: 38px;
+                padding: 0 16px;
+                border-radius: 10px;
+                background-color: #243142;
+                color: #eef4fb;
+                border: 1px solid #314457;
+                font-weight: 700;
+            }
+            QPushButton:hover {
+                background-color: #2b3d51;
+            }
+            QPushButton#test_button {
+                min-width: 86px;
+                background-color: #1f3850;
+                border: 1px solid #2f5678;
+            }
+            QPushButton#test_button:hover {
+                background-color: #284766;
+            }
+            QDialogButtonBox QPushButton {
+                min-width: 112px;
+                background-color: #1c7ed6;
+                border: none;
+            }
+            QDialogButtonBox QPushButton:hover {
+                background-color: #2589e3;
+            }
         """)
-        
+
         layout = QVBoxLayout(self)
-        form_layout = QFormLayout()
-        
+        layout.setContentsMargins(22, 20, 22, 18)
+        layout.setSpacing(14)
+
+        title = QLabel("Backend locali")
+        title.setObjectName("dialog_title")
+        subtitle = QLabel("Configura gli endpoint e testa subito la connessione senza uscire dalla finestra.")
+        subtitle.setObjectName("dialog_subtitle")
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(12)
+        grid.setVerticalSpacing(4)
+        grid.setColumnStretch(1, 1)
+
         self.inputs = {}
-        for name, url in current_config["backends"].items():
+        self.status_labels = {}
+        backends = current_config.get("backends", {})
+        ordered_names = [
+            AIBackend.OLLAMA,
+            AIBackend.LM_STUDIO,
+            AIBackend.LLAMA_CPP,
+            AIBackend.LLAMA_SWAP,
+            AIBackend.OPENAI_COMPATIBLE,
+        ]
+
+        row = 0
+        for name in ordered_names:
+            url = backends.get(name, DEFAULT_CONFIG["backends"].get(name, ""))
+            title_label = QLabel(name)
+            title_label.setProperty("role", "backend_name")
+
             edit = QLineEdit(url)
+            if name == AIBackend.OPENAI_COMPATIBLE:
+                edit.setPlaceholderText("https://host:porta/v1")
             self.inputs[name] = edit
-            form_layout.addRow(QLabel(f"{name}:"), edit)
-            
-        layout.addLayout(form_layout)
-        
+
+            test_button = QPushButton("Test")
+            test_button.setObjectName("test_button")
+            test_button.clicked.connect(partial(self.test_backend, name))
+
+            status = QLabel(" ")
+            status.setProperty("role", "backend_status")
+            self.status_labels[name] = status
+
+            grid.addWidget(title_label, row, 0, 1, 1)
+            grid.addWidget(edit, row, 1, 1, 1)
+            grid.addWidget(test_button, row, 2, 1, 1)
+            grid.addWidget(status, row + 1, 1, 1, 2)
+            row += 2
+
+        layout.addLayout(grid)
+
+        notes = QLabel("La quinta voce serve per endpoint OpenAI-compatible generici, ad esempio vLLM o LocalAI. Ha senso se vuoi collegare altri server locali o self-hosted oltre a quelli gia configurati.")
+        notes.setWordWrap(True)
+        notes.setObjectName("dialog_subtitle")
+        layout.addWidget(notes)
+
+        layout.addStretch(1)
+
         btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         btns.accepted.connect(self.accept)
         btns.rejected.connect(self.reject)
         layout.addWidget(btns)
+
+    def test_backend(self, name):
+        edit = self.inputs[name]
+        status_label = self.status_labels[name]
+        ok, message = test_backend_connection(name, edit.text().strip())
+        color = "#78d6a4" if ok else "#ff9b9b"
+        status_label.setText(message)
+        status_label.setStyleSheet(f"color: {color}; font-size: 11px; padding: 1px 2px 0 2px;")
 
     def get_config(self):
         return {"backends": {n: e.text().strip() for n, e in self.inputs.items()}}
@@ -983,6 +1139,7 @@ class WebChatBridge(QObject):
     send_requested = pyqtSignal(str)
     session_selected = pyqtSignal(int)
     session_delete_requested = pyqtSignal(int)
+    session_rename_requested = pyqtSignal(int, str)
     new_chat_requested = pyqtSignal()
     ready = pyqtSignal()
 
@@ -1006,11 +1163,16 @@ class WebChatBridge(QObject):
     def deleteSession(self, index):
         self.session_delete_requested.emit(index)
 
+    @pyqtSlot(int, str)
+    def renameSession(self, index, label):
+        self.session_rename_requested.emit(index, label)
+
 
 class CodexWebChatWindow(QWidget):
     history_updated = pyqtSignal(int, list)
     session_selected = pyqtSignal(int)
     delete_session_requested = pyqtSignal(int)
+    rename_session_requested = pyqtSignal(int, str)
     new_chat_requested = pyqtSignal()
 
     def __init__(self, backend_urls):
@@ -1046,6 +1208,7 @@ class CodexWebChatWindow(QWidget):
         self.web_bridge.send_requested.connect(self.send_msg)
         self.web_bridge.session_selected.connect(self.session_selected.emit)
         self.web_bridge.session_delete_requested.connect(self.delete_session_requested.emit)
+        self.web_bridge.session_rename_requested.connect(self.rename_session_requested.emit)
         self.web_bridge.new_chat_requested.connect(self.new_chat_requested.emit)
         self.web_bridge.ready.connect(self.on_web_ready)
         self.web_view.loadFinished.connect(self.on_web_load_finished)
@@ -1214,6 +1377,10 @@ class CodexWebChatWindow(QWidget):
       flex: 1;
       min-width: 0;
     }
+    .session-actions {
+      position: relative;
+      flex: 0 0 auto;
+    }
     .session-item:hover {
       background: rgba(24, 34, 46, 0.8);
       border-color: #293647;
@@ -1234,21 +1401,61 @@ class CodexWebChatWindow(QWidget):
       color: #8ca0b5;
       line-height: 1.2;
     }
-    .session-delete {
+    .session-menu-button {
       flex: 0 0 auto;
-      min-width: 24px;
-      width: 24px;
-      height: 24px;
+      min-width: 28px;
+      width: 28px;
+      height: 28px;
       padding: 0;
-      border-radius: 8px;
+      border-radius: 10px;
       background: rgba(36, 47, 60, 0.86);
       color: #94a7bc;
-      font-size: 13px;
+      font-size: 16px;
+      font-weight: 700;
       line-height: 1;
+      min-width: 28px;
     }
-    .session-delete:hover {
+    .session-menu-button:hover {
+      background: rgba(55, 69, 86, 0.96);
+      color: #eef5fb;
+    }
+    .session-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 148px;
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid #2b3848;
+      background: rgba(15, 21, 28, 0.98);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+      display: none;
+      z-index: 30;
+    }
+    .session-menu.open {
+      display: block;
+    }
+    .session-menu-item {
+      width: 100%;
+      min-width: 0;
+      justify-content: flex-start;
+      text-align: left;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: transparent;
+      color: #dce6f0;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .session-menu-item:hover {
+      background: rgba(33, 44, 57, 0.96);
+    }
+    .session-menu-item.destructive {
+      color: #ffb8b8;
+    }
+    .session-menu-item.destructive:hover {
       background: rgba(98, 44, 44, 0.92);
-      color: #fff0f0;
+      color: #fff1f1;
     }
     .content-shell {
       min-width: 0;
@@ -1452,6 +1659,9 @@ class CodexWebChatWindow(QWidget):
     let bridge = null;
     let latestState = null;
     let isDraggingDivider = false;
+    function closeAllSessionMenus() {
+      document.querySelectorAll(".session-menu.open").forEach((menu) => menu.classList.remove("open"));
+    }
     function setSidebarWidth(width) {
       const clamped = Math.max(260, Math.min(520, width));
       document.documentElement.style.setProperty("--sidebar-width", clamped + "px");
@@ -1478,8 +1688,7 @@ class CodexWebChatWindow(QWidget):
       const list = document.getElementById("session-list");
       list.innerHTML = "";
       state.sessions.forEach((session) => {
-        const item = document.createElement("button");
-        item.type = "button";
+        const item = document.createElement("div");
         item.className = "session-item" + (session.selected ? " active" : "");
         item.innerHTML = `
           <div class="session-row">
@@ -1487,14 +1696,40 @@ class CodexWebChatWindow(QWidget):
               <div class="session-title">${escapeHtml(session.label)}</div>
               <div class="session-meta">${escapeHtml(session.meta)}</div>
             </div>
-            <button type="button" class="session-delete" title="Elimina chat">×</button>
+            <div class="session-actions">
+              <button type="button" class="session-menu-button" title="Azioni chat" aria-label="Azioni chat">⋯</button>
+              <div class="session-menu">
+                <button type="button" class="session-menu-item" data-action="rename">Rinomina</button>
+                <button type="button" class="session-menu-item destructive" data-action="delete">Elimina</button>
+              </div>
+            </div>
           </div>`;
-        item.querySelector(".session-delete").addEventListener("click", (event) => {
+        const menuButton = item.querySelector(".session-menu-button");
+        const menu = item.querySelector(".session-menu");
+        menuButton.addEventListener("click", (event) => {
           event.stopPropagation();
+          const isOpen = menu.classList.contains("open");
+          closeAllSessionMenus();
+          if (!isOpen) menu.classList.add("open");
+        });
+        menu.querySelector('[data-action="rename"]').addEventListener("click", (event) => {
+          event.stopPropagation();
+          closeAllSessionMenus();
+          const timestampSuffix = new RegExp("\\\\s+\\\\(\\\\d{2}/\\\\d{2}\\\\s+\\\\d{2}:\\\\d{2}\\\\)\\\\s*$");
+          const currentLabel = session.label.replace(timestampSuffix, "");
+          const renamed = window.prompt("Nuovo nome della chat:", currentLabel);
+          if (renamed && renamed.trim() && bridge) {
+            bridge.renameSession(session.index, renamed.trim());
+          }
+        });
+        menu.querySelector('[data-action="delete"]').addEventListener("click", (event) => {
+          event.stopPropagation();
+          closeAllSessionMenus();
           const confirmed = window.confirm(`Eliminare la chat "${session.label}"?`);
           if (confirmed && bridge) bridge.deleteSession(session.index);
         });
         item.addEventListener("click", () => {
+          closeAllSessionMenus();
           if (bridge) bridge.openSession(session.index);
         });
         list.appendChild(item);
@@ -1562,6 +1797,9 @@ class CodexWebChatWindow(QWidget):
       const divider = document.getElementById("sidebar-divider");
       document.getElementById("new-chat-button").addEventListener("click", () => {
         if (bridge) bridge.createNewChat();
+      });
+      document.addEventListener("click", () => {
+        closeAllSessionMenus();
       });
       divider.addEventListener("mousedown", () => {
         isDraggingDivider = true;
@@ -1756,6 +1994,7 @@ class MainApp:
         self.chat_window.history_updated.connect(self.save_updated_history)
         self.chat_window.session_selected.connect(self.restore)
         self.chat_window.delete_session_requested.connect(self.delete_session)
+        self.chat_window.rename_session_requested.connect(self.rename_session)
         self.chat_window.new_chat_requested.connect(self.start_new_session_ui)
         
         # Initial Sidebar Population
@@ -2023,6 +2262,35 @@ class MainApp:
         except Exception as e:
             print(f"Error clearing database: {e}")
 
+    def rename_session(self, idx, new_label):
+        if idx < 0 or idx >= len(self.sessions):
+            return
+
+        label = (new_label or "").strip()
+        if not label:
+            return
+
+        session = self.sessions[idx]
+        old_label = session.get('label', '')
+        timestamp_match = re.search(r'(\(\d{2}/\d{2}\s+\d{2}:\d{2}\))\s*$', old_label)
+        if timestamp_match and timestamp_match.group(1) not in label:
+            label = f"{label} {timestamp_match.group(1)}"
+
+        session['label'] = label
+
+        try:
+            if session.get('id') is not None:
+                conn = sqlite3.connect(CHAT_DB_FILE)
+                cursor = conn.cursor()
+                cursor.execute('UPDATE sessions SET label = ? WHERE id = ?', (label, session['id']))
+                conn.commit()
+                conn.close()
+        except Exception as e:
+            print(f"Error renaming session in database: {e}")
+
+        self.chat_window.update_sidebar(self.sessions, self.chat_window.idx)
+        self.chat_window.render_web_state()
+
     def delete_session(self, idx):
         if idx < 0 or idx >= len(self.sessions):
             return
@@ -2053,14 +2321,21 @@ class MainApp:
 
     def refresh_mods(self):
         try:
-            if self.active_backend == AIBackend.OLLAMA: 
-                ms = [m['model'] if isinstance(m, dict) else m.model for m in ollama.list().get('models', [])]
+            if self.active_backend == AIBackend.OLLAMA:
+                base_url = self.backend_urls.get("backends", {}).get(self.active_backend, "").strip()
+                if base_url:
+                    response = requests.get(f"{base_url.rstrip('/')}/api/tags", timeout=4)
+                    response.raise_for_status()
+                    ms = [m.get('model') for m in response.json().get('models', []) if m.get('model')]
+                else:
+                    ms = [m['model'] if isinstance(m, dict) else m.model for m in ollama.list().get('models', [])]
             else:
-                # Use configured URL
-                base_url = self.backend_urls.get("backends", {}).get(self.active_backend, "")
+                base_url = self.backend_urls.get("backends", {}).get(self.active_backend, "").strip()
                 if not base_url:
                     return ["URL non configurato"]
-                ms = [m['id'] for m in requests.get(f"{base_url.rstrip('/v1')}/v1/models").json()['data']]
+                response = requests.get(openai_models_url(base_url), timeout=4)
+                response.raise_for_status()
+                ms = [m.get('id') for m in response.json().get('data', []) if m.get('id')]
             if ms:
                 if self.active_model not in ms: self.active_model = ms[0]
             return ms
@@ -2076,7 +2351,11 @@ class MainApp:
         m.addAction("⚙️ Configura Backend", self.open_config_dialog)
         m.addSeparator()
         bk = m.addMenu("⚙️ Motore AI")
-        for b in [AIBackend.OLLAMA, AIBackend.LM_STUDIO, AIBackend.LLAMA_CPP, AIBackend.LLAMA_SWAP]:
+        backend_list = [AIBackend.OLLAMA, AIBackend.LM_STUDIO, AIBackend.LLAMA_CPP, AIBackend.LLAMA_SWAP]
+        custom_backend_url = self.backend_urls.get("backends", {}).get(AIBackend.OPENAI_COMPATIBLE, "").strip()
+        if custom_backend_url:
+            backend_list.append(AIBackend.OPENAI_COMPATIBLE)
+        for b in backend_list:
             a = bk.addAction(b); a.setCheckable(True); a.setChecked(self.active_backend == b)
             a.triggered.connect(partial(self.set_bk, b))
         mods = self.refresh_mods()

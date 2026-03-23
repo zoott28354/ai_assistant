@@ -50,6 +50,7 @@ L'app nasce per lavorare con backend locali compatibili con i modelli già insta
 - LM Studio
 - Llama.cpp
 - Llama-Swap
+- Compatibile OpenAI generico, per endpoint locali o self-hosted come `vLLM` o `LocalAI`
 
 Valori di default in [config.json](E:\AI_Assistant.claude\config.json):
 

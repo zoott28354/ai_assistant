@@ -1,11 +1,11 @@
-# 👁️ AI Assistant (v3.2)
+# 👁️ AI Assistant (v3.3)
 
 Un potente assistente AI locale per Windows progettato per l'analisi visiva e testuale immediata. Grazie all'integrazione con i principali motori LLM locali, permette di estrarre informazioni da immagini, tradurre testi e spiegare codice direttamente dal tuo desktop, sfruttando la potenza della tua GPU (ottimizzato per serie RTX 50/40).
 
 
 
 ## ✨ Caratteristiche principali
-* **Modern UI v3.2:** Nuova interfaccia chat con sidebar persistente per la cronologia e design minimalista.
+* **Modern UI v3.3:** Nuova interfaccia chat con sidebar persistente per la cronologia e design minimalista.
 * **Sistema di Configurazione:** Pannello dedicato per gestire gli URL dei backend (Ollama, LM Studio, ecc.) in modo persistente.
 * **Analisi Area (Screenshot):** Seleziona un rettangolo sullo schermo per inviarlo all'AI.
 * **Analisi Appunti (Clipboard):** Analizza, spiega o traduci istantaneamente il testo negli appunti.
@@ -25,7 +25,7 @@ Un potente assistente AI locale per Windows progettato per l'analisi visiva e te
 Se non desideri installare Python, scarica la versione pronta all'uso:
 
 1. Vai nella sezione **[Releases](https://github.com/zoott28354/ai_assistant/releases)**.
-2. Scarica il file **`AI_Assistant_v3.2.exe`**.
+2. Scarica il file **`AI_Assistant_v3.3.exe`**.
 3. **Avviso Windows:** Clicca su *"Ulteriori informazioni"* e poi su *"Esegui comunque"*.
 
 ---

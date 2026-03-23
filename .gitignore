@@ -5,6 +5,7 @@ env/
 
 # File di dati privati
 history_db.json
+chat_history.db
 
 # Cache di Python e file temporanei
 __pycache__/

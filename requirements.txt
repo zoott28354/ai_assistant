@@ -1,11 +1,10 @@
-setuptools
-wheel
-PyQt6
+pyqt6
+pyqt6-webengine
 ollama
-openai
-mss
+requests
 pyperclip
 pyautogui
-Pillow
-requests
+mss
+pillow
 markdown
+openai

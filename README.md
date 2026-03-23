@@ -1,53 +1,158 @@
-# 👁️ AI Assistant (v3.3)
+# 👁️ AI Assistant v3.3
 
-Un potente assistente AI locale per Windows progettato per l'analisi visiva e testuale immediata. Grazie all'integrazione con i principali motori LLM locali, permette di estrarre informazioni da immagini, tradurre testi e spiegare codice direttamente dal tuo desktop, sfruttando la potenza della tua GPU (ottimizzato per serie RTX 50/40).
+Un assistente AI locale per Windows pensato per lavorare davvero bene dal desktop: cattura schermate, legge testo dagli appunti, invia immagini o prompt ai tuoi modelli locali e mantiene una cronologia persistente delle conversazioni.
 
+L'idea del progetto è semplice: avere un assistente sempre pronto nella system tray per tradurre, spiegare, analizzare immagini, leggere errori a schermo e continuare il flusso in chat senza dipendere dal cloud.
 
+## ✨ Perché usarlo
 
-## ✨ Caratteristiche principali
-* **Modern UI v3.3:** Nuova interfaccia chat con sidebar persistente per la cronologia e design minimalista.
-* **Sistema di Configurazione:** Pannello dedicato per gestire gli URL dei backend (Ollama, LM Studio, ecc.) in modo persistente.
-* **Analisi Area (Screenshot):** Seleziona un rettangolo sullo schermo per inviarlo all'AI.
-* **Analisi Appunti (Clipboard):** Analizza, spiega o traduci istantaneamente il testo negli appunti.
-* **Multi-Backend:** Supporto per Ollama, LM Studio, Llama.cpp e Llama-Swap.
-* **Privacy Totale:** Tutto viene elaborato localmente, nessun dato viene inviato al cloud.
-* **Storico Sessioni:** Conversazioni salvate automaticamente in `history_db.json`.
+- 🔒 **Tutto resta locale**: screenshot, testo copiato e cronologia non vengono inviati a servizi esterni.
+- 🤖 **Più backend supportati**: Ollama, LM Studio, Llama.cpp e Llama-Swap.
+- ⚡ **Flusso rapido da desktop**: parti da una cattura schermo o da un testo copiato e continui subito in chat.
+- 🧠 **Cronologia persistente**: le sessioni vengono salvate in SQLite e riprese in seguito.
+- 🖥️ **UI aggiornata in v3.3**: chat più moderna in webview, sidebar migliorata e flussi più stabili.
 
-## 🛠️ Requisiti di Sistema
-* **Sistema Operativo:** Windows 10/11.
-* **Python:** 3.10 o superiore.
-* **AI Engine:** Uno tra Ollama, LM Studio o Llama.cpp attivo.
-* **Hardware:** Consigliata GPU NVIDIA (es. RTX 5090/4070).
+## 🚀 Novità della v3.3
 
----
+- 💬 Nuova chat desktop con rendering web-based integrato in PyQt.
+- 📚 Sidebar cronologia più leggibile, ridimensionabile e con eliminazione singola delle chat.
+- 🗂️ Persistenza sessioni corretta e ordinamento basato sull'ultima attività.
+- 🖱️ Scroll e comportamento della chat migliorati.
+- 📸 `Analizza Area` ora usa il ritaglio nativo di Windows.
+- 🌈 Migliore compatibilità pratica con sistemi HDR grazie al passaggio al capture nativo.
+- 🧩 Supporto esplicito a `PyQt6-WebEngine` per la nuova UI.
 
-## 📦 Download Eseguibile (Consigliato)
-Se non desideri installare Python, scarica la versione pronta all'uso:
+## 🛠️ Funzioni principali
 
-1. Vai nella sezione **[Releases](https://github.com/zoott28354/ai_assistant/releases)**.
-2. Scarica il file **`AI_Assistant_v3.3.exe`**.
-3. **Avviso Windows:** Clicca su *"Ulteriori informazioni"* e poi su *"Esegui comunque"*.
+- 📸 **Analizza Area**  
+  Apre il ritaglio nativo di Windows, acquisisce la selezione e la invia al modello.
 
----
+- 📋 **Analizza Testo Copiato**  
+  Prende il contenuto dagli appunti e lo manda subito in analisi.
 
-## 🚀 Installazione da Sorgente (Sviluppatori)
-1. Scarica o clona questo repository.
-2. Clicca due volte su **`setup.bat`**.
-3. Avvia il programma con **`start_ai_assistant.bat`**.
+- 💬 **Chat persistente**  
+  Puoi continuare una conversazione esistente oppure aprirne una nuova.
 
----
+- 🔌 **Multi-backend locale**  
+  Scegli backend e modello dal menu nella tray.
 
-## 🖥️ Come iniziare
-1. Avvia l'app e cerca l'icona dell'occhio nella **System Tray**.
-2. Fai click destro per configurare backend e modelli.
-3. Usa la shortcut di cattura o analisi testo dal menu.
+- ⚙️ **Configurazione backend persistente**  
+  Gli URL vengono salvati in `config.json`.
 
-## 📂 Struttura del Repository
-* `main.py`: Sorgente principale.
-* `config.json`: Configurazione backend.
-* `setup.bat`: Configurazione ambiente.
-* `requirements.txt`: Dipendenze.
-* `ai_assistant.ico`: Icona ufficiale.
+- 🖼️ **Supporto immagini**  
+  Le richieste con immagini vengono gestite dai backend compatibili.
 
----
-*Progetto focalizzato su privacy e velocità nell'uso quotidiano dei modelli LLM locali.*
+## 🤖 Backend supportati
+
+L'app nasce per lavorare con backend locali compatibili con i modelli già installati sulla tua macchina.
+
+- Ollama
+- LM Studio
+- Llama.cpp
+- Llama-Swap
+
+Valori di default in [config.json](E:\AI_Assistant.claude\config.json):
+
+- `Ollama`: `http://localhost:11434`
+- `LM Studio`: `http://localhost:1234/v1`
+- `Llama.cpp`: `http://localhost:8033/v1`
+- `Llama-Swap`: `http://localhost:8080/v1`
+
+Puoi modificarli direttamente dall'interfaccia, senza toccare i file a mano.
+
+## 📋 Requisiti
+
+- 🪟 Windows 10 o Windows 11
+- 🐍 Python 3.10 o superiore
+- 🧠 Un backend locale attivo tra quelli supportati
+- 🎮 GPU consigliata per un uso più fluido con modelli vision o multimodali
+
+## 📦 Installazione da sorgente
+
+1. Clona o scarica il repository.
+2. Esegui [setup.bat](E:\AI_Assistant.claude\setup.bat).
+3. Attendi la creazione del `venv` e l'installazione delle dipendenze.
+4. Avvia l'app con `start_ai_assistant.bat`.
+
+Se preferisci farlo manualmente:
+
+```powershell
+python -m venv venv
+.\venv\Scripts\python.exe -m pip install --upgrade pip
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+.\venv\Scripts\pythonw.exe main.py
+```
+
+## 📚 Dipendenze principali
+
+Le dipendenze Python sono in [requirements.txt](E:\AI_Assistant.claude\requirements.txt):
+
+- `pyqt6`
+- `pyqt6-webengine`
+- `ollama`
+- `requests`
+- `pyperclip`
+- `pyautogui`
+- `mss`
+- `pillow`
+- `markdown`
+- `openai`
+
+## 🧭 Come si usa
+
+1. Avvia l'app.
+2. Cerca l'icona nella system tray.
+3. Con click destro puoi:
+   - 💬 aprire la chat
+   - 🤖 scegliere backend e modello
+   - 📸 analizzare un'area dello schermo
+   - 📋 analizzare il testo copiato
+   - ⚙️ aprire la configurazione dei backend
+4. Dopo una cattura o un'analisi, continua la conversazione in chat per fare follow-up.
+
+## 💾 Persistenza e file locali
+
+Il progetto salva dati locali in questi file:
+
+- [config.json](E:\AI_Assistant.claude\config.json): URL dei backend
+- [chat_history.db](E:\AI_Assistant.claude\chat_history.db): cronologia chat persistente
+- [history_db.json](E:\AI_Assistant.claude\history_db.json): storico legacy o dati precedenti
+
+`chat_history.db` è ignorato dal repository e non dovrebbe essere versionato.
+
+## 🗂️ Struttura del repository
+
+- [main.py](E:\AI_Assistant.claude\main.py): applicazione principale
+- [requirements.txt](E:\AI_Assistant.claude\requirements.txt): dipendenze Python
+- [config.json](E:\AI_Assistant.claude\config.json): configurazione backend
+- [setup.bat](E:\AI_Assistant.claude\setup.bat): bootstrap ambiente su Windows
+- [ai_assistant.ico](E:\AI_Assistant.claude\ai_assistant.ico): icona dell'app
+- [README.md](E:\AI_Assistant.claude\README.md): documentazione progetto
+
+## 🧪 Note tecniche
+
+- La shell dell'app è costruita in **PyQt6**.
+- La chat `v3.3` usa una **webview** (`PyQt6-WebEngine`) per ottenere una UI più moderna e flessibile.
+- Le sessioni sono memorizzate in **SQLite**.
+- Per i backend OpenAI-compatible locali viene usato il client `openai` con `base_url` custom.
+- Per Ollama viene usata l'integrazione Python dedicata.
+- `Analizza Area` sfrutta il **ritaglio nativo di Windows** per una resa migliore, soprattutto su sistemi HDR.
+
+## ⬇️ Download eseguibile
+
+Se preferisci una build pronta all'uso:
+
+1. Vai su [Releases](https://github.com/zoott28354/ai_assistant/releases)
+2. Scarica `AI_Assistant_v3.3.exe`
+3. Se Windows mostra SmartScreen, scegli **"Ulteriori informazioni"** e poi **"Esegui comunque"**
+
+## 📈 Stato del progetto
+
+La `v3.3` è una versione più matura rispetto alla precedente `v3.2`, soprattutto per:
+
+- 💬 UI chat
+- 🗂️ gestione cronologia
+- 🧱 stabilità del flusso di cattura
+- 🌈 migliore integrazione con il ritaglio nativo di Windows
+
+Se usi backend locali tutti i giorni sul desktop, questa versione punta a essere più affidabile, più leggibile e più comoda nell'uso reale, non solo in demo.

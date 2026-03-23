@@ -143,8 +143,17 @@ Il progetto salva dati locali in questi file:
 Se preferisci una build pronta all'uso:
 
 1. Vai su [Releases](https://github.com/zoott28354/ai_assistant/releases)
-2. Scarica `AI_Assistant_v3.3.exe`
+2. Scarica `AI_Assistant_Setup_v3.3.exe`
 3. Se Windows mostra SmartScreen, scegli **"Ulteriori informazioni"** e poi **"Esegui comunque"**
+
+## 👤 Autore
+
+Creato e mantenuto da **zoott28354**.
+
+## 📄 Licenza
+
+Questo progetto è distribuito con licenza **MIT**.
+Per il testo completo vedi [LICENSE](E:\AI_Assistant.claude\LICENSE).
 
 ## 📈 Stato del progetto
 

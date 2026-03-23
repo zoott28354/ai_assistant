@@ -62,12 +62,24 @@ Puoi modificarli direttamente dall'interfaccia, senza toccare i file a mano.
 
 ## 📋 Requisiti
 
+### Per usare il setup Windows
+
 - 🪟 Windows 10 o Windows 11
-- 🐍 Python 3.10 o superiore
-- 🧠 Un backend locale attivo tra quelli supportati
+- 🧠 Almeno un backend locale attivo tra quelli supportati, se vuoi usare davvero l'assistente
+- 🎮 GPU consigliata per un uso più fluido con modelli vision o multimodali
+
+`Python non serve`: il setup include gia tutto il necessario per avviare l'app.
+
+### Per eseguire il progetto da sorgente
+
+- 🪟 Windows 10 o Windows 11
+- 🐍 Python 3.10 o superiore gia installato nel sistema
+- 🧠 Almeno un backend locale attivo tra quelli supportati
 - 🎮 GPU consigliata per un uso più fluido con modelli vision o multimodali
 
 ## 📦 Installazione da sorgente
+
+Questa sezione serve solo se vuoi clonare il repository e avviare il progetto manualmente.
 
 1. Clona o scarica il repository.
 2. Esegui [setup.bat](E:\AI_Assistant.claude\setup.bat).
@@ -144,7 +156,10 @@ Se preferisci una build pronta all'uso:
 
 1. Vai su [Releases](https://github.com/zoott28354/ai_assistant/releases)
 2. Scarica `AI_Assistant_Setup_v3.3.exe`
-3. Se Windows mostra SmartScreen, scegli **"Ulteriori informazioni"** e poi **"Esegui comunque"**
+3. Installa l'app normalmente
+4. Se Windows mostra SmartScreen, scegli **"Ulteriori informazioni"** e poi **"Esegui comunque"**
+
+Il setup installa gia l'app con il proprio runtime: non e necessario installare Python separatamente.
 
 ## 👤 Autore
 

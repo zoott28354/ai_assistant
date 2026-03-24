@@ -1196,9 +1196,13 @@ class CodexWebChatWindow(QWidget):
 
         self.web_view = QWebEngineView()
         self.web_view.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+        self.web_view.setStyleSheet("background-color: #15191f; border: none;")
+        self.web_view.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
+        self.web_view.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, False)
         self.web_view.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, False)
         self.web_view.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessFileUrls, False)
         self.web_view.settings().setAttribute(QWebEngineSettings.WebAttribute.ShowScrollBars, True)
+        self.web_view.page().setBackgroundColor(QColor("#15191f"))
         main_layout.addWidget(self.web_view)
 
         self.web_channel = QWebChannel(self.web_view.page())
@@ -1213,6 +1217,15 @@ class CodexWebChatWindow(QWidget):
         self.web_bridge.ready.connect(self.on_web_ready)
         self.web_view.loadFinished.connect(self.on_web_load_finished)
         self.web_view.setHtml(self.build_chat_html())
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if not hasattr(self, "web_view"):
+            return
+        self.web_view.page().setBackgroundColor(QColor("#15191f"))
+        self.web_view.update()
+        self.web_view.repaint()
+        QTimer.singleShot(0, self.web_view.update)
 
     def build_chat_html(self):
         return """<!DOCTYPE html>
@@ -1333,6 +1346,29 @@ class CodexWebChatWindow(QWidget):
       font-weight: 700;
       letter-spacing: 1px;
       text-transform: uppercase;
+    }
+    .sidebar-search-wrap {
+      padding: 0 18px 10px 18px;
+    }
+    .sidebar-search {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid #2b3847;
+      border-radius: 12px;
+      background: rgba(21, 28, 36, 0.92);
+      color: #e7eef6;
+      font: inherit;
+      font-size: 13px;
+      padding: 0 12px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .sidebar-search:focus {
+      border-color: #4d79a5;
+      box-shadow: inset 0 0 0 1px rgba(125, 174, 229, 0.16);
+    }
+    .sidebar-search::placeholder {
+      color: #73879d;
     }
     .session-list {
       flex: 1;
@@ -1456,6 +1492,12 @@ class CodexWebChatWindow(QWidget):
     .session-menu-item.destructive:hover {
       background: rgba(98, 44, 44, 0.92);
       color: #fff1f1;
+    }
+    .session-empty {
+      padding: 12px 10px;
+      color: #7f93a8;
+      font-size: 12px;
+      line-height: 1.5;
     }
     .content-shell {
       min-width: 0;
@@ -1628,6 +1670,9 @@ class CodexWebChatWindow(QWidget):
       </div>
       <button class="new-chat-button" id="new-chat-button" type="button">+ Nuova chat</button>
       <div class="sidebar-section">Sessioni recenti</div>
+      <div class="sidebar-search-wrap">
+        <input class="sidebar-search" id="sidebar-search" type="text" placeholder="Trova una chat..." />
+      </div>
       <div class="session-list" id="session-list"></div>
     </aside>
     <div class="divider" id="sidebar-divider" title="Trascina per ridimensionare"></div>
@@ -1659,6 +1704,7 @@ class CodexWebChatWindow(QWidget):
     let bridge = null;
     let latestState = null;
     let isDraggingDivider = false;
+    let sidebarSearchQuery = "";
     function closeAllSessionMenus() {
       document.querySelectorAll(".session-menu.open").forEach((menu) => menu.classList.remove("open"));
     }
@@ -1687,7 +1733,19 @@ class CodexWebChatWindow(QWidget):
     function renderSessions(state) {
       const list = document.getElementById("session-list");
       list.innerHTML = "";
-      state.sessions.forEach((session) => {
+      const query = sidebarSearchQuery.trim().toLowerCase();
+      const filteredSessions = state.sessions.filter((session) => {
+        if (!query) return true;
+        return (`${session.label} ${session.meta}`).toLowerCase().includes(query);
+      });
+      if (!filteredSessions.length) {
+        const empty = document.createElement("div");
+        empty.className = "session-empty";
+        empty.textContent = query ? "Nessuna chat trovata per questa ricerca." : "Nessuna chat disponibile.";
+        list.appendChild(empty);
+        return;
+      }
+      filteredSessions.forEach((session) => {
         const item = document.createElement("div");
         item.className = "session-item" + (session.selected ? " active" : "");
         item.innerHTML = `
@@ -1795,8 +1853,13 @@ class CodexWebChatWindow(QWidget):
       const form = document.getElementById("composer-form");
       const input = document.getElementById("composer-input");
       const divider = document.getElementById("sidebar-divider");
+      const sidebarSearch = document.getElementById("sidebar-search");
       document.getElementById("new-chat-button").addEventListener("click", () => {
         if (bridge) bridge.createNewChat();
+      });
+      sidebarSearch.addEventListener("input", (event) => {
+        sidebarSearchQuery = event.target.value || "";
+        if (latestState) renderSessions(latestState);
       });
       document.addEventListener("click", () => {
         closeAllSessionMenus();

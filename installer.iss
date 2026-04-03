@@ -1,9 +1,9 @@
 #define MyAppName "AI Assistant"
-#define MyAppVersion "3.3"
+#define MyAppVersion "3.4"
 #define MyAppPublisher "zoott28354"
 #define MyAppURL "https://github.com/zoott28354/ai_assistant"
-#define MyAppExeName "AI_Assistant_v3.3.exe"
-#define MyAppDistDir "dist\\AI_Assistant_v3.3"
+#define MyAppExeName "AI_Assistant_v3.4.exe"
+#define MyAppDistDir "dist\\AI_Assistant_v3.4"
 #define MyAppId "{{D24A7F21-9271-4B6E-BD3E-4F9C7A46B1D2}"
 #define MyAppDataDir "{userappdata}\\AI Assistant"
 
@@ -21,7 +21,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=LICENSE
 OutputDir=installer_output
-OutputBaseFilename=AI_Assistant_Setup_v3.3
+OutputBaseFilename=AI_Assistant_Setup_v3.4
 SetupIconFile=ai_assistant.ico
 WizardStyle=modern
 Compression=lzma

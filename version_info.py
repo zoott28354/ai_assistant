@@ -1,7 +1,7 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(3, 3, 0, 0),
-    prodvers=(3, 3, 0, 0),
+    filevers=(3, 4, 0, 0),
+    prodvers=(3, 4, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -16,12 +16,12 @@ VSVersionInfo(
         [
           StringStruct('CompanyName', 'zoott28354'),
           StringStruct('FileDescription', 'AI Assistant local desktop app'),
-          StringStruct('FileVersion', '3.3.0'),
-          StringStruct('InternalName', 'AI_Assistant_v3.3'),
+          StringStruct('FileVersion', '3.4.0'),
+          StringStruct('InternalName', 'AI_Assistant_v3.4'),
           StringStruct('LegalCopyright', 'Copyright (c) 2026 zoott28354'),
-          StringStruct('OriginalFilename', 'AI_Assistant_v3.3.exe'),
+          StringStruct('OriginalFilename', 'AI_Assistant_v3.4.exe'),
           StringStruct('ProductName', 'AI Assistant'),
-          StringStruct('ProductVersion', '3.3.0'),
+          StringStruct('ProductVersion', '3.4.0'),
         ]
       )
     ]),

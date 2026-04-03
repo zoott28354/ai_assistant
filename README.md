@@ -10,8 +10,6 @@ AI Assistant is a local desktop companion for Windows built for real day-to-day 
 
 The idea is simple: keep an assistant in the system tray that is always ready to translate, explain, analyze images, inspect on-screen errors, and continue the flow in chat without relying on the cloud.
 
-For version history, see [CHANGELOG.md](E:\AI_Assistant.claude\CHANGELOG.md).
-
 ## 🖼️ Screenshots
 
 <table>
@@ -175,3 +173,5 @@ v3.4 is a more mature version than the previous releases, especially in:
 - multilingual interface and installer support
 
 If you use local AI backends every day from the desktop, this version is aimed at being more reliable, more readable, and more comfortable in real use, not just in demos.
+
+For version history, see [CHANGELOG.md](E:\AI_Assistant.claude\CHANGELOG.md).

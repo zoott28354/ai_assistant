@@ -1,9 +1,7 @@
-#define MyAppName "AI Assistant"
-#define MyAppVersion "3.4"
-#define MyAppPublisher "zoott28354"
-#define MyAppURL "https://github.com/zoott28354/ai_assistant"
-#define MyAppExeName "AI_Assistant_v3.4.exe"
-#define MyAppDistDir "dist\\AI_Assistant_v3.4"
+#define MyProjectRoot ".."
+#include "app_meta.iss"
+#define MyAppDistDir MyProjectRoot + "\\dist\\AI_Assistant"
+#define MyOutputDir MyProjectRoot + "\\installer_output"
 #define MyAppId "{{D24A7F21-9271-4B6E-BD3E-4F9C7A46B1D2}"
 #define MyAppDataDir "{userappdata}\\AI Assistant"
 
@@ -19,10 +17,10 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={localappdata}\Programs\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-LicenseFile=LICENSE
-OutputDir=installer_output
-OutputBaseFilename=AI_Assistant_Setup_v3.4
-SetupIconFile=ai_assistant.ico
+LicenseFile={#MyProjectRoot}\LICENSE
+OutputDir={#MyOutputDir}
+OutputBaseFilename={#MyOutputBaseFilename}
+SetupIconFile={#MyProjectRoot}\ai_assistant.ico
 WizardStyle=modern
 Compression=lzma
 SolidCompression=yes
@@ -126,15 +124,6 @@ begin
       mbConfirmation,
       MB_YESNO
     ) = IDYES;
-
-  if RemoveUserData then
-  begin
-    Log('User chose to remove application data.');
-  end
-  else
-  begin
-    Log('User chose to keep application data.');
-  end;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);

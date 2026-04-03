@@ -1,5 +1,4 @@
-APP_NAME = "AI Assistant"
-APP_VERSION = "3.4"
+from .app_meta import APP_NAME, APP_VERSION
 
 LANGUAGE_LABELS = {
     "it": "Italiano",

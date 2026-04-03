@@ -1,16 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+import sys
 
-app_name = "AI_Assistant_v3.4"
+ROOT_DIR = os.path.abspath(os.path.join(SPECPATH, ".."))
+sys.path.insert(0, ROOT_DIR)
+
+from core.app_meta import APP_SLUG
+
+app_name = APP_SLUG
 
 a = Analysis(
-    ['main.py'],
-    pathex=[],
+    [os.path.join(ROOT_DIR, 'main.py')],
+    pathex=[ROOT_DIR],
     binaries=[],
     datas=[
-        ('ai_assistant.ico', '.'),
-        ('LICENSE', '.'),
-        ('README.md', '.'),
+        (os.path.join(ROOT_DIR, 'ai_assistant.ico'), '.'),
+        (os.path.join(ROOT_DIR, 'LICENSE'), '.'),
+        (os.path.join(ROOT_DIR, 'README.md'), '.'),
     ],
     hiddenimports=[],
     hookspath=[],
@@ -40,8 +47,8 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['ai_assistant.ico'],
-    version='version_info.py',
+    icon=[os.path.join(ROOT_DIR, 'ai_assistant.ico')],
+    version=os.path.join(SPECPATH, 'version_info.py'),
 )
 
 coll = COLLECT(

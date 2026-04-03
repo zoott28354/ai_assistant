@@ -10,7 +10,7 @@ L'idea del progetto è semplice: avere un assistente sempre pronto nella system 
 - 🤖 **Più backend supportati**: Ollama, LM Studio, Llama.cpp e Llama-Swap.
 - ⚡ **Flusso rapido da desktop**: parti da una cattura schermo o da un testo copiato e continui subito in chat.
 - 🧠 **Cronologia persistente**: le sessioni vengono salvate in SQLite e riprese in seguito.
-- 🖥️ **UI aggiornata in v3.4**: chat più moderna in webview, sidebar migliorata, flussi più stabili e supporto iniziale multilingua.
+- 🖥️ **UI aggiornata in v3.4**: chat più moderna in webview, sidebar migliorata, flussi più stabili e supporto multilingua dell'interfaccia.
 
 ## 🚀 Novità della v3.4
 
@@ -21,7 +21,7 @@ L'idea del progetto è semplice: avere un assistente sempre pronto nella system 
 - 📸 `Analizza Area` ora usa il ritaglio nativo di Windows.
 - 🌈 Migliore compatibilità pratica con sistemi HDR grazie al passaggio al capture nativo.
 - 🧩 Supporto esplicito a `PyQt6-WebEngine` per la nuova UI.
-- 🌍 Interfaccia multilingua con base italiana e inglese.
+- 🌍 Interfaccia multilingua con supporto per italiano, inglese, spagnolo, francese, tedesco e portoghese.
 
 ## 🛠️ Funzioni principali
 

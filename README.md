@@ -34,18 +34,10 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 - ⚡ Fast desktop-first workflow: start from the tray, analyze an area or copied text, then continue in chat.
 - 🧠 Persistent sessions: conversations are stored in SQLite and can be resumed later.
 - 🖥️ Updated v3.4 UI: improved webview-based chat, better sidebar, multilingual interface, and cleaner internal architecture.
-
-## 🚀 What's new in v3.4
-
-- 💬 New integrated desktop chat with modern webview rendering.
-- 📚 Better session sidebar with search, rename, delete, and resizing support.
-- 🗂️ More reliable session persistence and ordering based on latest activity.
-- 🧭 Improved tray-first internal refactor without changing the current workflow.
-- 📝 Updated prompts for copied text and image analysis.
-- 📸 Native Windows snipping flow for `Analyze Area`.
-- 🌈 Better practical behavior on HDR systems thanks to native screen capture.
-- 🌍 Multilingual UI support for Italian, English, Spanish, French, German, and Portuguese.
-- ℹ️ Multilingual Windows installer and multilingual `About` dialog in the tray menu.
+- 📚 The sidebar supports search, rename, delete, and quick session access.
+- 📸 `Analyze Area` uses the native Windows snipping flow for better practical results, including HDR-friendly capture behavior.
+- 🌍 The interface is available in Italian, English, Spanish, French, German, and Portuguese.
+- ℹ️ The tray includes a multilingual `About` dialog, and the installer is multilingual too.
 
 ## 🛠️ Main features
 
@@ -66,6 +58,20 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 
 - 🖼️ `Image Support`
   Image-based requests are handled by compatible multimodal backends.
+
+## 🧭 How it works
+
+1. Download `AI_Assistant_Setup_v3.4.exe` from [Releases](https://github.com/zoott28354/ai_assistant/releases).
+2. Install the app.
+3. Launch it and look for the icon in the system tray.
+4. With a right click you can:
+   - open the chat
+   - choose backend and model
+   - analyze an area of the screen
+   - analyze copied text
+   - open backend configuration
+   - open the multilingual `About` dialog
+5. After a capture or analysis, continue the conversation in chat for follow-up.
 
 ## 🤖 Supported backends
 
@@ -121,69 +127,20 @@ python -m venv venv
 .\venv\Scripts\pythonw.exe main.py
 ```
 
-## 📚 Main dependencies
-
-The Python dependencies are listed in [requirements.txt](E:\AI_Assistant.claude\requirements.txt):
-
-- `pyqt6`
-- `pyqt6-webengine`
-- `ollama`
-- `requests`
-- `pyperclip`
-- `pyautogui`
-- `mss`
-- `pillow`
-- `markdown`
-- `openai`
-
-## 🧭 How it works
-
-1. Launch the app.
-2. Look for the icon in the system tray.
-3. With a right click you can:
-   - open the chat
-   - choose backend and model
-   - analyze an area of the screen
-   - analyze copied text
-   - open backend configuration
-   - open the multilingual `About` dialog
-4. After a capture or analysis, continue the conversation in chat for follow-up.
-
 ## 💾 Persistence and local files
 
-The project stores local data in these files:
+AI Assistant stores its data locally on your machine.
 
-- [config.json](E:\AI_Assistant.claude\config.json): backend URLs and interface language
-- [chat_history.db](E:\AI_Assistant.claude\chat_history.db): persistent chat history
-- [history_db.json](E:\AI_Assistant.claude\history_db.json): legacy history file
+- `config.json`: backend URLs and interface language
+- `chat_history.db`: persistent SQLite chat history, including image-based analysis sessions
 
-When installed normally, user data is stored in `%AppData%\AI Assistant`.
+With a normal installation, user data is stored in `%AppData%\AI Assistant`.
 
-If `portable mode` is selected during setup, data is stored next to the installed app instead.
+If you enable `portable mode` during setup, data is stored next to the installed app instead.
 
 During uninstall, the setup asks whether user data should also be removed.
 
-## 🗂️ Repository structure
-
-- [main.py](E:\AI_Assistant.claude\main.py): application bootstrap and orchestration
-- [controllers](E:\AI_Assistant.claude\controllers): tray-first controller logic
-- [core](E:\AI_Assistant.claude\core): configuration, i18n, backend helpers
-- [services](E:\AI_Assistant.claude\services): sessions, tray, capture, clipboard
-- [ui](E:\AI_Assistant.claude\ui): dialogs and UI helpers
-- [workers](E:\AI_Assistant.claude\workers): background AI worker
-- [installer.iss](E:\AI_Assistant.claude\installer.iss): Inno Setup installer script
-- [build_installer.bat](E:\AI_Assistant.claude\build_installer.bat): local installer build helper
-- [ai_assistant.ico](E:\AI_Assistant.claude\ai_assistant.ico): application icon
-- [ui/about_dialog.py](E:\AI_Assistant.claude\ui\about_dialog.py): multilingual About dialog with clickable GitHub link
-
-## 🧪 Technical notes
-
-- The desktop shell is built with PyQt6.
-- The v3.4 chat uses a `PyQt6-WebEngine` webview for a more flexible modern UI.
-- Sessions are stored in SQLite.
-- OpenAI-compatible local backends use the `openai` client with a custom `base_url`.
-- Ollama uses the dedicated Python integration.
-- `Analyze Area` relies on the native Windows snipping flow for better practical results, especially on HDR systems.
+For advanced users running from source, the project files remain available in this repository, but the installer is designed so normal users do not need to understand the internal structure or Python dependencies.
 
 ## ⬇️ Download
 

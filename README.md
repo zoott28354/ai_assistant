@@ -1,50 +1,56 @@
-# AI Assistant v3.4
+# 👁️ AI Assistant v3.4
+
+[![Version](https://img.shields.io/badge/version-3.4-1f8ceb.svg)](https://github.com/zoott28354/ai_assistant/releases/tag/v3.4)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0f172a.svg)](https://github.com/zoott28354/ai_assistant)
+[![License](https://img.shields.io/badge/license-MIT-16a34a.svg)](https://github.com/zoott28354/ai_assistant/blob/main/LICENSE)
+[![Local First](https://img.shields.io/badge/local--first-yes-7c3aed.svg)](https://github.com/zoott28354/ai_assistant)
+[![UI Languages](https://img.shields.io/badge/UI%20languages-6-f59e0b.svg)](https://github.com/zoott28354/ai_assistant)
 
 AI Assistant is a local desktop companion for Windows built for real day-to-day use: capture part of the screen, read copied text, send prompts or images to your local models, and keep a persistent conversation history ready for follow-up.
 
 The idea is simple: keep an assistant in the system tray that is always ready to translate, explain, analyze images, inspect on-screen errors, and continue the flow in chat without relying on the cloud.
 
-## Why use it
+## ✨ Why use it
 
-- Everything stays local: screenshots, copied text, configuration, and chat history are stored on your machine.
-- Multiple local backends are supported: Ollama, LM Studio, Llama.cpp, Llama-Swap, and generic OpenAI-compatible endpoints.
-- Fast desktop-first workflow: start from the tray, analyze an area or copied text, then continue in chat.
-- Persistent sessions: conversations are stored in SQLite and can be resumed later.
-- Updated v3.4 UI: improved webview-based chat, better sidebar, multilingual interface, and cleaner internal architecture.
+- 🔒 Everything stays local: screenshots, copied text, configuration, and chat history are stored on your machine.
+- 🤖 Multiple local backends are supported: Ollama, LM Studio, Llama.cpp, Llama-Swap, and generic OpenAI-compatible endpoints.
+- ⚡ Fast desktop-first workflow: start from the tray, analyze an area or copied text, then continue in chat.
+- 🧠 Persistent sessions: conversations are stored in SQLite and can be resumed later.
+- 🖥️ Updated v3.4 UI: improved webview-based chat, better sidebar, multilingual interface, and cleaner internal architecture.
 
-## What's new in v3.4
+## 🚀 What's new in v3.4
 
-- New integrated desktop chat with modern webview rendering.
-- Better session sidebar with search, rename, delete, and resizing support.
-- More reliable session persistence and ordering based on latest activity.
-- Improved tray-first internal refactor without changing the current workflow.
-- Updated prompts for copied text and image analysis.
-- Native Windows snipping flow for `Analyze Area`.
-- Better practical behavior on HDR systems thanks to native screen capture.
-- Multilingual UI support for Italian, English, Spanish, French, German, and Portuguese.
-- Multilingual Windows installer and multilingual `About` dialog in the tray menu.
+- 💬 New integrated desktop chat with modern webview rendering.
+- 📚 Better session sidebar with search, rename, delete, and resizing support.
+- 🗂️ More reliable session persistence and ordering based on latest activity.
+- 🧭 Improved tray-first internal refactor without changing the current workflow.
+- 📝 Updated prompts for copied text and image analysis.
+- 📸 Native Windows snipping flow for `Analyze Area`.
+- 🌈 Better practical behavior on HDR systems thanks to native screen capture.
+- 🌍 Multilingual UI support for Italian, English, Spanish, French, German, and Portuguese.
+- ℹ️ Multilingual Windows installer and multilingual `About` dialog in the tray menu.
 
-## Main features
+## 🛠️ Main features
 
-- `Analyze Area`
+- 📸 `Analyze Area`
   Opens the native Windows snipping tool, captures the selection, and sends it to the active model.
 
-- `Analyze Copied Text`
+- 📋 `Analyze Copied Text`
   Reads text from the clipboard and sends it directly for translation and analysis.
 
-- `Persistent Chat`
+- 💬 `Persistent Chat`
   Continue an existing conversation or open a new one without losing context.
 
-- `Local Multi-Backend Support`
+- 🔌 `Local Multi-Backend Support`
   Choose backend and model directly from the tray menu.
 
-- `Persistent Backend Configuration`
+- ⚙️ `Persistent Backend Configuration`
   Backend URLs and interface language are saved in `config.json`.
 
-- `Image Support`
+- 🖼️ `Image Support`
   Image-based requests are handled by compatible multimodal backends.
 
-## Supported backends
+## 🤖 Supported backends
 
 The app is designed for local or self-hosted backends that expose models already available on your machine.
 
@@ -63,7 +69,7 @@ Default values in [config.json](E:\AI_Assistant.claude\config.json):
 
 You can change them directly from the interface without editing files manually.
 
-## Requirements
+## 📋 Requirements
 
 ### To use the Windows installer
 
@@ -80,7 +86,7 @@ Python is not required: the setup already includes the runtime needed to launch 
 - At least one supported local backend running
 - A GPU is recommended for smoother use with vision or multimodal models
 
-## Install from source
+## 📦 Install from source
 
 This section is only for people who want to clone the repository and run the project manually.
 
@@ -98,7 +104,7 @@ python -m venv venv
 .\venv\Scripts\pythonw.exe main.py
 ```
 
-## Main dependencies
+## 📚 Main dependencies
 
 The Python dependencies are listed in [requirements.txt](E:\AI_Assistant.claude\requirements.txt):
 
@@ -113,7 +119,7 @@ The Python dependencies are listed in [requirements.txt](E:\AI_Assistant.claude\
 - `markdown`
 - `openai`
 
-## How it works
+## 🧭 How it works
 
 1. Launch the app.
 2. Look for the icon in the system tray.
@@ -126,7 +132,7 @@ The Python dependencies are listed in [requirements.txt](E:\AI_Assistant.claude\
    - open the multilingual `About` dialog
 4. After a capture or analysis, continue the conversation in chat for follow-up.
 
-## Persistence and local files
+## 💾 Persistence and local files
 
 The project stores local data in these files:
 
@@ -140,7 +146,7 @@ If `portable mode` is selected during setup, data is stored next to the installe
 
 During uninstall, the setup asks whether user data should also be removed.
 
-## Repository structure
+## 🗂️ Repository structure
 
 - [main.py](E:\AI_Assistant.claude\main.py): application bootstrap and orchestration
 - [controllers](E:\AI_Assistant.claude\controllers): tray-first controller logic
@@ -151,8 +157,9 @@ During uninstall, the setup asks whether user data should also be removed.
 - [installer.iss](E:\AI_Assistant.claude\installer.iss): Inno Setup installer script
 - [build_installer.bat](E:\AI_Assistant.claude\build_installer.bat): local installer build helper
 - [ai_assistant.ico](E:\AI_Assistant.claude\ai_assistant.ico): application icon
+- [ui/about_dialog.py](E:\AI_Assistant.claude\ui\about_dialog.py): multilingual About dialog with clickable GitHub link
 
-## Technical notes
+## 🧪 Technical notes
 
 - The desktop shell is built with PyQt6.
 - The v3.4 chat uses a `PyQt6-WebEngine` webview for a more flexible modern UI.
@@ -161,7 +168,7 @@ During uninstall, the setup asks whether user data should also be removed.
 - Ollama uses the dedicated Python integration.
 - `Analyze Area` relies on the native Windows snipping flow for better practical results, especially on HDR systems.
 
-## Download
+## ⬇️ Download
 
 If you want a ready-to-use build:
 
@@ -172,16 +179,16 @@ If you want a ready-to-use build:
 
 The setup already includes the runtime needed to launch the application, so Python does not need to be installed separately.
 
-## Author
+## 👤 Author
 
 Created and maintained by `zoott28354`.
 
-## License
+## 📄 License
 
 This project is released under the MIT license.
 See [LICENSE](E:\AI_Assistant.claude\LICENSE) for the full text.
 
-## Project status
+## 📈 Project status
 
 v3.4 is a more mature version than the previous releases, especially in:
 

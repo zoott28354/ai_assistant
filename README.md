@@ -10,6 +10,13 @@ AI Assistant is a local desktop companion for Windows built for real day-to-day 
 
 The idea is simple: keep an assistant in the system tray that is always ready to translate, explain, analyze images, inspect on-screen errors, and continue the flow in chat without relying on the cloud.
 
+## 🖼️ Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/tray-menu-v3.4.png" alt="AI Assistant tray menu" width="48%" />
+  <img src="docs/screenshots/Chat.png" alt="AI Assistant chat window" width="48%" />
+</p>
+
 ## ✨ Why use it
 
 - 🔒 Everything stays local: screenshots, copied text, configuration, and chat history are stored on your machine.

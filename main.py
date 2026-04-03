@@ -1,203 +1,48 @@
 import sys
-import io
-import time
 import os
 import base64
-import shutil
 import requests
-import pyperclip
-import pyautogui
-import ollama
 import json
 import re
-import mss
-import mss.tools
 import markdown
-from PIL import Image, ImageEnhance, ImageStat, ImageOps, ImageGrab
 from datetime import datetime
-from functools import partial
-from openai import OpenAI
-import sqlite3
+
+from controllers.tray_controller import TrayController
+from core.config import (
+    APP_DATA_DIR,
+    CHAT_DB_FILE,
+    CONFIG_FILE,
+    HISTORY_FILE,
+    load_runtime_config,
+    save_runtime_config,
+)
+from core.i18n import APP_NAME, APP_VERSION, tr
+from services.session_service import (
+    clear_history_db,
+    delete_session as delete_stored_session,
+    init_db,
+    load_legacy_history,
+    load_sessions_from_db,
+    persist_session_update,
+    rename_session as rename_stored_session,
+)
+from ui.config_dialog import ConfigDialog
+from workers.ai_worker import AIWorker
 
 # --- CONFIGURAZIONE SISTEMA ---
 os.environ["QT_LOGGING_RULES"] = "qt.qpa.window=false"
 os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
-APP_NAME = "AI Assistant"
-PORTABLE_MARKER = "portable_mode.flag"
-HISTORY_FILE_NAME = "history_db.json"
-CONFIG_FILE_NAME = "config.json"
-CHAT_DB_FILE_NAME = "chat_history.db"
-
-# Default backend URLs
-DEFAULT_CONFIG = {
-    "backends": {
-        "Ollama": "http://localhost:11434",
-        "LM Studio": "http://localhost:1234/v1",
-        "Llama.cpp": "http://localhost:8033/v1",
-        "Llama-Swap": "http://localhost:8080/v1",
-        "Compatibile OpenAI": ""
-    }
-}
-
-
-def get_runtime_dir():
-    if getattr(sys, "frozen", False):
-        return os.path.dirname(os.path.abspath(sys.executable))
-    return os.path.dirname(os.path.abspath(__file__))
-
-
-def get_user_data_dir():
-    if sys.platform.startswith("win"):
-        base_dir = os.environ.get("APPDATA") or os.path.expanduser("~")
-    elif sys.platform == "darwin":
-        base_dir = os.path.join(os.path.expanduser("~"), "Library", "Application Support")
-    else:
-        base_dir = os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config")
-    return os.path.join(base_dir, APP_NAME)
-
-
-def get_app_data_dir():
-    runtime_dir = get_runtime_dir()
-    portable_marker = os.path.join(runtime_dir, PORTABLE_MARKER)
-    if getattr(sys, "frozen", False):
-        if os.path.exists(portable_marker):
-            return runtime_dir
-        return get_user_data_dir()
-    return runtime_dir
-
-
-def ensure_app_data_dir():
-    data_dir = get_app_data_dir()
-    os.makedirs(data_dir, exist_ok=True)
-    return data_dir
-
-
-def migrate_storage_file(filename, target_dir):
-    target_path = os.path.join(target_dir, filename)
-    if os.path.exists(target_path):
-        return target_path
-
-    candidate_dirs = []
-    runtime_dir = get_runtime_dir()
-    current_dir = os.path.abspath(os.getcwd())
-    for candidate in (runtime_dir, current_dir):
-        if candidate and candidate not in candidate_dirs:
-            candidate_dirs.append(candidate)
-
-    for candidate_dir in candidate_dirs:
-        source_path = os.path.join(candidate_dir, filename)
-        if not os.path.exists(source_path) or os.path.abspath(source_path) == os.path.abspath(target_path):
-            continue
-        try:
-            shutil.copy2(source_path, target_path)
-            return target_path
-        except Exception as exc:
-            print(f"Warning: unable to migrate {filename}: {exc}")
-            break
-
-    return target_path
-
-
-APP_DATA_DIR = ensure_app_data_dir()
-HISTORY_FILE = migrate_storage_file(HISTORY_FILE_NAME, APP_DATA_DIR)
-CONFIG_FILE = migrate_storage_file(CONFIG_FILE_NAME, APP_DATA_DIR)
-CHAT_DB_FILE = migrate_storage_file(CHAT_DB_FILE_NAME, APP_DATA_DIR)
 
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextBrowser, 
-                             QLineEdit, QPushButton, QLabel, QSystemTrayIcon, QMenu, 
-                             QStyle, QRubberBand, QMessageBox, QListWidget, QListWidgetItem, 
+                             QLineEdit, QPushButton, QLabel, QSystemTrayIcon, 
+                             QStyle, QMessageBox, QListWidget, QListWidgetItem, 
                              QScrollArea, QFrame, QSizePolicy, QAbstractItemView, QDialog, 
-                             QFormLayout, QDialogButtonBox, QSplitter, QGridLayout)
-from PyQt6.QtCore import Qt, QRect, QThread, pyqtSignal, pyqtSlot, QObject, QSize, QTimer, QBuffer, QIODevice
+                             QSplitter)
+from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QObject, QSize, QTimer
 from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor
 from PyQt6.QtWebChannel import QWebChannel
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebEngineCore import QWebEngineSettings
-
-
-def normalize_hdr_capture(image):
-    image = image.convert("RGB")
-    luminance = image.convert("L")
-    histogram = luminance.histogram()
-    total_pixels = sum(histogram) or 1
-    bright_ratio = sum(histogram[245:]) / total_pixels
-    mean_luma = ImageStat.Stat(luminance).mean[0]
-    cumulative = 0
-    p90 = 255
-    p98 = 255
-    for idx, count in enumerate(histogram):
-        cumulative += count
-        if cumulative >= total_pixels * 0.90 and p90 == 255:
-            p90 = idx
-        if cumulative >= total_pixels * 0.98:
-            p98 = idx
-            break
-
-    if mean_luma < 168 and bright_ratio < 0.07 and p98 < 242:
-        return image
-
-    severe = mean_luma > 190 or bright_ratio > 0.16 or p98 >= 248
-    knee = max(150, min(210, p90 + (10 if severe else 18)))
-    compression = 0.28 if severe else 0.42
-    gamma = 1.18 if severe else 1.10
-
-    def tone_curve(p):
-        v = (p / 255.0) ** gamma
-        mapped = int(v * 255)
-        if mapped > knee:
-            mapped = int(knee + (mapped - knee) * compression)
-        if mapped > 245:
-            mapped = int(245 + (mapped - 245) * 0.18)
-        return max(0, min(255, mapped))
-
-    image = image.point(tone_curve)
-    image = ImageEnhance.Brightness(image).enhance(0.84 if severe else 0.92)
-    image = ImageEnhance.Contrast(image).enhance(1.08 if severe else 1.04)
-    image = ImageEnhance.Color(image).enhance(0.93 if severe else 0.97)
-    image = ImageOps.autocontrast(image, cutoff=(0.5, 1.5))
-    return image
-
-
-def image_to_png_bytes(image):
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
-    return buffer.getvalue()
-
-
-def openai_models_url(base_url):
-    base = (base_url or "").strip().rstrip("/")
-    if not base:
-        return ""
-    if base.endswith("/v1"):
-        return f"{base}/models"
-    return f"{base}/v1/models"
-
-
-def test_backend_connection(backend_name, url, timeout=4):
-    cleaned_url = (url or "").strip()
-    if not cleaned_url:
-        return False, "URL non configurato"
-
-    try:
-        if backend_name == AIBackend.OLLAMA:
-            response = requests.get(f"{cleaned_url.rstrip('/')}/api/tags", timeout=timeout)
-            response.raise_for_status()
-            models = [m.get("model", "") for m in response.json().get("models", []) if m.get("model")]
-        else:
-            response = requests.get(openai_models_url(cleaned_url), timeout=timeout)
-            response.raise_for_status()
-            models = [m.get("id", "") for m in response.json().get("data", []) if m.get("id")]
-        if models:
-            return True, f"{len(models)} modelli trovati"
-        return True, "Connesso, nessun modello rilevato"
-    except requests.exceptions.Timeout:
-        return False, "Timeout"
-    except requests.exceptions.ConnectionError:
-        return False, "Offline"
-    except requests.exceptions.HTTPError:
-        return False, "Risposta non valida"
-    except Exception:
-        return False, "Connessione fallita"
 
 # --- FUNZIONE PER RISORSE EXE ---
 def resource_path(relative_path):
@@ -480,9 +325,10 @@ STYLE_SHEET = """
 """
 
 class MessageWidget(QWidget):
-    def __init__(self, role, content, images=None):
+    def __init__(self, role, content, images=None, language="it"):
         super().__init__()
         self.role = role
+        self.language = language
         layout = QVBoxLayout()
         layout.setContentsMargins(28, 8, 28, 8)
 
@@ -490,13 +336,13 @@ class MessageWidget(QWidget):
             layout.setAlignment(Qt.AlignmentFlag.AlignRight)
             text_color = "#dfe8f2"
             meta_color = "#7fb0ff"
-            label_text = "Tu"
+            label_text = tr("you", self.language)
             accent = "#2f6fca"
         else:
             layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
             text_color = "#edf3f9"
             meta_color = "#91a3b5"
-            label_text = "Assistente locale"
+            label_text = tr("assistant_local", self.language)
             accent = "#2b3440"
 
         container = QWidget()
@@ -566,280 +412,15 @@ class MessageWidget(QWidget):
         text = text.replace('\n', '<br>')
         return text
 
-class AIWorker(QThread):
-    finished = pyqtSignal(str, list)
-    def __init__(self, history, model, backend, backend_urls):
-        super().__init__()
-        self.history, self.model, self.backend = history, model, backend
-        self.backend_urls = backend_urls
-
-    def run(self):
-        try:
-            if self.backend == AIBackend.OLLAMA:
-                # Fix: stream=False è fondamentale per non bloccare il programma
-                res = ollama.chat(model=self.model, messages=self.history, stream=False)
-                answer = res['message']['content']
-            else:
-                base_url = self.backend_urls.get("backends", {}).get(self.backend, "")
-                if not base_url:
-                    raise Exception(f"URL non configurato per {self.backend}")
-                
-                client = OpenAI(base_url=base_url, api_key="sk-no-key-required")
-                msgs = []
-                for m in self.history:
-                    if 'images' in m and m['images']:
-                        content = [{"type": "text", "text": m['content']}]
-                        for img in m['images']:
-                            b64 = img if isinstance(img, str) else base64.b64encode(img).decode('utf-8')
-                            content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}})
-                        msgs.append({"role": m['role'], "content": content})
-                    else:
-                        msgs.append({"role": m['role'], "content": m['content']})
-                comp = client.chat.completions.create(model=self.model, messages=msgs)
-                answer = comp.choices[0].message.content
-
-            self.history.append({'role': 'assistant', 'content': answer})
-            self.finished.emit(answer, self.history)
-        except Exception as e:
-            self.finished.emit(f"Errore [{self.backend}]: {str(e)}", self.history)
-
-class ConfigDialog(QDialog):
-    def __init__(self, current_config, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Configurazione Backend LLM")
-        self.resize(760, 420)
-        self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowTitleHint | Qt.WindowType.WindowSystemMenuHint | Qt.WindowType.WindowCloseButtonHint)
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #15191f;
-                color: #e7edf5;
-            }
-            QLabel {
-                color: #dce6f0;
-            }
-            QLabel#dialog_title {
-                color: #f3f7fb;
-                font-size: 22px;
-                font-weight: 700;
-            }
-            QLabel#dialog_subtitle {
-                color: #91a3b7;
-                font-size: 12px;
-            }
-            QLabel[role="backend_name"] {
-                color: #f3f7fb;
-                font-size: 13px;
-                font-weight: 700;
-                padding-top: 8px;
-            }
-            QLabel[role="backend_status"] {
-                color: #8ea1b5;
-                font-size: 11px;
-                padding: 1px 2px 0 2px;
-            }
-            QLineEdit {
-                min-height: 38px;
-                background-color: #202732;
-                color: #eef4fb;
-                border: 1px solid #2d3948;
-                border-radius: 10px;
-                padding: 0 12px;
-                selection-background-color: #2d6eb2;
-            }
-            QLineEdit:focus {
-                border: 1px solid #4f83b8;
-            }
-            QPushButton {
-                min-height: 38px;
-                padding: 0 16px;
-                border-radius: 10px;
-                background-color: #243142;
-                color: #eef4fb;
-                border: 1px solid #314457;
-                font-weight: 700;
-            }
-            QPushButton:hover {
-                background-color: #2b3d51;
-            }
-            QPushButton#test_button {
-                min-width: 86px;
-                background-color: #1f3850;
-                border: 1px solid #2f5678;
-            }
-            QPushButton#test_button:hover {
-                background-color: #284766;
-            }
-            QDialogButtonBox QPushButton {
-                min-width: 112px;
-                background-color: #1c7ed6;
-                border: none;
-            }
-            QDialogButtonBox QPushButton:hover {
-                background-color: #2589e3;
-            }
-        """)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(22, 20, 22, 18)
-        layout.setSpacing(14)
-
-        title = QLabel("Backend locali")
-        title.setObjectName("dialog_title")
-        subtitle = QLabel("Configura gli endpoint e testa subito la connessione senza uscire dalla finestra.")
-        subtitle.setObjectName("dialog_subtitle")
-        layout.addWidget(title)
-        layout.addWidget(subtitle)
-
-        grid = QGridLayout()
-        grid.setHorizontalSpacing(12)
-        grid.setVerticalSpacing(4)
-        grid.setColumnStretch(1, 1)
-
-        self.inputs = {}
-        self.status_labels = {}
-        backends = current_config.get("backends", {})
-        ordered_names = [
-            AIBackend.OLLAMA,
-            AIBackend.LM_STUDIO,
-            AIBackend.LLAMA_CPP,
-            AIBackend.LLAMA_SWAP,
-            AIBackend.OPENAI_COMPATIBLE,
-        ]
-
-        row = 0
-        for name in ordered_names:
-            url = backends.get(name, DEFAULT_CONFIG["backends"].get(name, ""))
-            title_label = QLabel(name)
-            title_label.setProperty("role", "backend_name")
-
-            edit = QLineEdit(url)
-            if name == AIBackend.OPENAI_COMPATIBLE:
-                edit.setPlaceholderText("https://host:porta/v1")
-            self.inputs[name] = edit
-
-            test_button = QPushButton("Test")
-            test_button.setObjectName("test_button")
-            test_button.clicked.connect(partial(self.test_backend, name))
-
-            status = QLabel(" ")
-            status.setProperty("role", "backend_status")
-            self.status_labels[name] = status
-
-            grid.addWidget(title_label, row, 0, 1, 1)
-            grid.addWidget(edit, row, 1, 1, 1)
-            grid.addWidget(test_button, row, 2, 1, 1)
-            grid.addWidget(status, row + 1, 1, 1, 2)
-            row += 2
-
-        layout.addLayout(grid)
-
-        notes = QLabel("La quinta voce serve per endpoint OpenAI-compatible generici, ad esempio vLLM o LocalAI. Ha senso se vuoi collegare altri server locali o self-hosted oltre a quelli gia configurati.")
-        notes.setWordWrap(True)
-        notes.setObjectName("dialog_subtitle")
-        layout.addWidget(notes)
-
-        layout.addStretch(1)
-
-        btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        btns.accepted.connect(self.accept)
-        btns.rejected.connect(self.reject)
-        layout.addWidget(btns)
-
-    def test_backend(self, name):
-        edit = self.inputs[name]
-        status_label = self.status_labels[name]
-        ok, message = test_backend_connection(name, edit.text().strip())
-        color = "#78d6a4" if ok else "#ff9b9b"
-        status_label.setText(message)
-        status_label.setStyleSheet(f"color: {color}; font-size: 11px; padding: 1px 2px 0 2px;")
-
-    def get_config(self):
-        return {"backends": {n: e.text().strip() for n, e in self.inputs.items()}}
-
-class SnippingTool(QWidget):
-    def __init__(self, callback):
-        super().__init__()
-        self.callback = callback
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
-        self.setStyleSheet("background-color: black;")
-        self.setWindowOpacity(0.3)
-        self.rubberband = QRubberBand(QRubberBand.Shape.Rectangle, self)
-        self.screen = QApplication.primaryScreen()
-        self.virtual_geometry = self.screen.virtualGeometry()
-        self.setGeometry(self.virtual_geometry)
-        self.show()
-
-    def mousePressEvent(self, e):
-        self.start_pt = e.pos()
-        self.rubberband.setGeometry(QRect(self.start_pt, self.start_pt))
-        self.rubberband.show()
-
-    def mouseMoveEvent(self, e):
-        self.rubberband.setGeometry(QRect(self.start_pt, e.pos()).normalized())
-
-    def mouseReleaseEvent(self, e):
-        r = QRect(self.start_pt, e.pos()).normalized()
-        self.rubberband.hide()
-        self.close()
-        if r.width() > 5:
-            QApplication.processEvents()
-            time.sleep(0.2)
-            global_top_left = self.mapToGlobal(r.topLeft())
-            global_bottom_right = self.mapToGlobal(r.bottomRight())
-            global_rect = QRect(global_top_left, global_bottom_right).normalized()
-
-            try:
-                grabbed = ImageGrab.grab(
-                    bbox=(
-                        global_rect.x(),
-                        global_rect.y(),
-                        global_rect.x() + global_rect.width(),
-                        global_rect.y() + global_rect.height(),
-                    ),
-                    all_screens=True,
-                )
-                if grabbed:
-                    self.callback(image_to_png_bytes(normalize_hdr_capture(grabbed)), False)
-                    return
-            except Exception:
-                pass
-
-            target_screen = QApplication.screenAt(global_rect.center()) or self.screen
-            screen_rect = target_screen.geometry()
-            local_rect = QRect(
-                global_rect.x() - screen_rect.x(),
-                global_rect.y() - screen_rect.y(),
-                global_rect.width(),
-                global_rect.height(),
-            )
-
-            pixmap = target_screen.grabWindow(0, local_rect.x(), local_rect.y(), local_rect.width(), local_rect.height())
-            if not pixmap.isNull():
-                buffer = QBuffer()
-                buffer.open(QIODevice.OpenModeFlag.WriteOnly)
-                pixmap.save(buffer, "PNG")
-                img = Image.open(io.BytesIO(bytes(buffer.data())))
-                self.callback(image_to_png_bytes(normalize_hdr_capture(img)), False)
-                return
-
-            with mss.mss() as sct:
-                img_data = sct.grab({
-                    "top": global_rect.y(),
-                    "left": global_rect.x(),
-                    "width": global_rect.width(),
-                    "height": global_rect.height()
-                })
-                img = Image.frombytes("RGB", img_data.size, img_data.bgra, "raw", "BGRX")
-                self.callback(image_to_png_bytes(normalize_hdr_capture(img)), False)
-
 class OllamaChatWindow(QWidget):
     history_updated = pyqtSignal(int, list)
     session_selected = pyqtSignal(int)
     new_chat_requested = pyqtSignal()
 
-    def __init__(self, backend_urls):
+    def __init__(self, backend_urls, language="it"):
         super().__init__()
-        self.setWindowTitle("AI Assistant - v3.3")
+        self.language = language
+        self.setWindowTitle(tr("window_title", self.language))
         self.resize(1120, 760)
         self.setStyleSheet(STYLE_SHEET)
         self.backend_urls = backend_urls
@@ -869,11 +450,11 @@ class OllamaChatWindow(QWidget):
         brand_layout.setContentsMargins(18, 18, 18, 8)
         brand_layout.setSpacing(4)
 
-        brand_eyebrow = QLabel("Assistente Locale")
+        brand_eyebrow = QLabel(tr("assistant_local_caps", self.language))
         brand_eyebrow.setObjectName("brand_eyebrow")
-        brand_title = QLabel("Vision Desk")
+        brand_title = QLabel(tr("app_title", self.language))
         brand_title.setObjectName("brand_title")
-        brand_caption = QLabel("Screenshot, clipboard e analisi visiva in una chat più pulita.")
+        brand_caption = QLabel(tr("legacy_brand_caption", self.language))
         brand_caption.setObjectName("brand_caption")
         brand_caption.setWordWrap(True)
 
@@ -882,12 +463,12 @@ class OllamaChatWindow(QWidget):
         brand_layout.addWidget(brand_caption)
         self.sidebar_layout.addWidget(brand_block)
 
-        self.btn_new = QPushButton("+ Nuova chat")
+        self.btn_new = QPushButton(tr("new_chat", self.language))
         self.btn_new.setObjectName("new_chat_button")
         self.btn_new.clicked.connect(self.new_chat_requested.emit)
         self.sidebar_layout.addWidget(self.btn_new)
 
-        session_label = QLabel("Sessioni recenti")
+        session_label = QLabel(tr("recent_sessions", self.language))
         session_label.setObjectName("section_label")
         self.sidebar_layout.addWidget(session_label)
 
@@ -911,17 +492,17 @@ class OllamaChatWindow(QWidget):
 
         top_text = QVBoxLayout()
         top_text.setSpacing(2)
-        self.chat_title = QLabel("Chat locale")
+        self.chat_title = QLabel(tr("chat_local", self.language))
         self.chat_title.setObjectName("chat_title")
-        self.chat_subtitle = QLabel("Traduci, analizza screenshot e continua la conversazione.")
+        self.chat_subtitle = QLabel(tr("chat_subtitle", self.language))
         self.chat_subtitle.setObjectName("chat_subtitle")
         top_text.addWidget(self.chat_title)
         top_text.addWidget(self.chat_subtitle)
         top_layout.addLayout(top_text, 1)
 
-        self.backend_badge = QLabel("Backend: non selezionato")
+        self.backend_badge = QLabel(tr("backend_badge", self.language, value=tr("not_selected", self.language)))
         self.backend_badge.setObjectName("context_badge")
-        self.model_badge = QLabel("Modello: non selezionato")
+        self.model_badge = QLabel(tr("model_badge", self.language, value=tr("not_selected", self.language)))
         self.model_badge.setObjectName("context_badge")
         top_layout.addWidget(self.backend_badge)
         top_layout.addWidget(self.model_badge)
@@ -957,11 +538,11 @@ class OllamaChatWindow(QWidget):
         composer_layout.setSpacing(8)
 
         self.input_field = QLineEdit()
-        self.input_field.setPlaceholderText("Scrivi un messaggio, chiedi una traduzione o continua un'analisi...")
+        self.input_field.setPlaceholderText(tr("input_placeholder", self.language))
         self.input_field.returnPressed.connect(self.send_msg)
         composer_layout.addWidget(self.input_field, 1)
 
-        self.send_button = QPushButton("Invia")
+        self.send_button = QPushButton(tr("send", self.language))
         self.send_button.setObjectName("send_button")
         self.send_button.clicked.connect(self.send_msg)
         composer_layout.addWidget(self.send_button)
@@ -983,20 +564,20 @@ class OllamaChatWindow(QWidget):
         layout.setContentsMargins(28, 28, 28, 28)
         layout.setSpacing(14)
 
-        eyebrow = QLabel("Pronto all'analisi")
+        eyebrow = QLabel(tr("ready_analysis", self.language))
         eyebrow.setObjectName("welcome_eyebrow")
-        title = QLabel("La chat deve accompagnare il motore, non nasconderlo.")
+        title = QLabel(tr("welcome_title", self.language))
         title.setObjectName("welcome_title")
         title.setWordWrap(True)
-        text = QLabel("Questa finestra ora mette in primo piano i punti forti dell'app: cattura schermate, traduzioni rapide e spiegazioni tecniche senza uscire dal desktop.")
+        text = QLabel(tr("welcome_text", self.language))
         text.setObjectName("welcome_text")
         text.setWordWrap(True)
 
-        feature_shot = QLabel("Screenshot area\nCattura una porzione di schermo e chiedi traduzioni o analisi.")
+        feature_shot = QLabel(tr("welcome_feature_shot", self.language))
         feature_shot.setObjectName("welcome_feature")
-        feature_clip = QLabel("Clipboard intelligente\nCopia testo da qualsiasi app e trasformalo subito in contesto utile.")
+        feature_clip = QLabel(tr("welcome_feature_clip", self.language))
         feature_clip.setObjectName("welcome_feature")
-        feature_chat = QLabel("Sessioni persistenti\nRiprendi una conversazione senza perdere modello, backend e storico.")
+        feature_chat = QLabel(tr("welcome_feature_chat", self.language))
         feature_chat.setObjectName("welcome_feature")
 
         layout.addWidget(eyebrow)
@@ -1008,16 +589,16 @@ class OllamaChatWindow(QWidget):
         return card
 
     def update_context_header(self, model, backend):
-        current_backend = backend or "non selezionato"
-        current_model = model or "non selezionato"
-        self.backend_badge.setText(f"Backend: {current_backend}")
-        self.model_badge.setText(f"Modello: {current_model}")
+        current_backend = backend or tr("not_selected", self.language)
+        current_model = model or tr("not_selected", self.language)
+        self.backend_badge.setText(tr("backend_badge", self.language, value=current_backend))
+        self.model_badge.setText(tr("model_badge", self.language, value=current_model))
         if self.history:
-            self.chat_title.setText("Conversazione attiva")
-            self.chat_subtitle.setText("Chat persistente per screenshot, testo copiato e follow-up rapidi.")
+            self.chat_title.setText(tr("active_conversation", self.language))
+            self.chat_subtitle.setText(tr("chat_subtitle_active", self.language))
         else:
-            self.chat_title.setText("Chat locale")
-            self.chat_subtitle.setText("Traduci, analizza screenshot e continua la conversazione.")
+            self.chat_title.setText(tr("chat_local", self.language))
+            self.chat_subtitle.setText(tr("chat_subtitle", self.language))
 
     def toggle_welcome_state(self, visible):
         self.empty_state.setVisible(visible)
@@ -1080,7 +661,7 @@ class OllamaChatWindow(QWidget):
         self.history_list.clear()
         for i, s in enumerate(reversed(sessions)):
             real_idx = len(sessions) - 1 - i
-            item = QListWidgetItem(s.get('label', f"Sess {real_idx+1}"))
+            item = QListWidgetItem(s.get('label', tr("session_fallback", self.language, index=real_idx + 1)))
             item.setData(Qt.ItemDataRole.UserRole, real_idx)
             self.history_list.addItem(item)
             if real_idx == current_idx:
@@ -1100,11 +681,11 @@ class OllamaChatWindow(QWidget):
         if is_new:
             self.ask_ai()
 
-        self.status_label.setText(f"Modello: {model} | Backend: {backend}")
+        self.status_label.setText(tr("status_model_backend", self.language, model=model, backend=backend))
 
     def add_message_bubble(self, role, content, images=[]):
         self.toggle_welcome_state(False)
-        bubble = MessageWidget(role, content, images)
+        bubble = MessageWidget(role, content, images, self.language)
         self.scroll_vbox.insertWidget(self.scroll_vbox.count()-1, bubble, 0, Qt.AlignmentFlag.AlignTop)
         QApplication.processEvents()
         self.queue_scroll_to_bottom(animated=(role == "assistant"), duration=500 if role == "assistant" else 180)
@@ -1120,16 +701,16 @@ class OllamaChatWindow(QWidget):
             self.history_updated.emit(self.idx, self.history)
 
     def ask_ai(self):
-        self.status_label.setText(f"Generazione in corso con {self.model}...")
+        self.status_label.setText(tr("status_generating", self.language, model=self.model))
         self.send_button.setEnabled(False)
-        self.worker = AIWorker(list(self.history), self.model, self.backend, self.backend_urls)
+        self.worker = AIWorker(list(self.history), self.model, self.backend, self.backend_urls, AIBackend.OLLAMA, self.language)
         self.worker.finished.connect(self.on_res)
         self.worker.start()
 
     def on_res(self, text, hist):
         self.history = hist
         self.add_message_bubble("assistant", text)
-        self.status_label.setText(f"Pronto ({self.model})")
+        self.status_label.setText(tr("status_ready_model", self.language, model=self.model))
         self.send_button.setEnabled(True)
         self.update_context_header(self.model, self.backend)
         self.history_updated.emit(self.idx, self.history)
@@ -1175,9 +756,10 @@ class CodexWebChatWindow(QWidget):
     rename_session_requested = pyqtSignal(int, str)
     new_chat_requested = pyqtSignal()
 
-    def __init__(self, backend_urls):
+    def __init__(self, backend_urls, language="it"):
         super().__init__()
-        self.setWindowTitle("AI Assistant - v3.3")
+        self.language = language
+        self.setWindowTitle(tr("window_title", self.language))
         self.resize(1180, 780)
         self.setStyleSheet(STYLE_SHEET)
         self.backend_urls = backend_urls
@@ -1189,6 +771,7 @@ class CodexWebChatWindow(QWidget):
         self.sessions_cache = []
         self.current_session_idx = -1
         self.session_factory = None
+        self.active_workers = []
 
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -1228,8 +811,31 @@ class CodexWebChatWindow(QWidget):
         QTimer.singleShot(0, self.web_view.update)
 
     def build_chat_html(self):
-        return """<!DOCTYPE html>
-<html lang="it">
+        ui = {
+            "assistantLocal": tr("assistant_local", self.language),
+            "newChat": tr("new_chat", self.language),
+            "recentSessions": tr("recent_sessions", self.language),
+            "searchChats": tr("search_chats", self.language),
+            "workspaceLocal": tr("workspace_local", self.language),
+            "chatLocal": tr("chat_local", self.language),
+            "chatSubtitle": tr("chat_subtitle", self.language),
+            "backendBadge": tr("backend_badge", self.language, value=tr("not_selected", self.language)),
+            "modelBadge": tr("model_badge", self.language, value=tr("not_selected", self.language)),
+            "composerPlaceholder": tr("input_placeholder", self.language),
+            "send": tr("send", self.language),
+            "emptySearch": tr("empty_search", self.language),
+            "emptyChats": tr("empty_chats", self.language),
+            "chatActions": tr("chat_actions", self.language),
+            "rename": tr("rename", self.language),
+            "delete": tr("delete", self.language),
+            "renamePrompt": tr("rename_prompt", self.language),
+            "deletePrompt": tr("delete_prompt", self.language, label="{label}"),
+            "backendPrefix": tr("backend_prefix", self.language),
+            "modelPrefix": tr("model_prefix", self.language),
+            "dividerResize": tr("divider_resize", self.language),
+        }
+        html = """<!DOCTYPE html>
+<html lang="__LANG__">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1664,28 +1270,25 @@ class CodexWebChatWindow(QWidget):
   <div class="app-shell">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <div class="brand-kicker">Assistente locale</div>
         <div class="brand-title">AI Assistant</div>
-        <div class="brand-copy">Una shell desktop più coerente, con cronologia e conversazione nello stesso linguaggio visivo.</div>
       </div>
-      <button class="new-chat-button" id="new-chat-button" type="button">+ Nuova chat</button>
-      <div class="sidebar-section">Sessioni recenti</div>
+      <button class="new-chat-button" id="new-chat-button" type="button">__NEW_CHAT__</button>
+      <div class="sidebar-section">__RECENT_SESSIONS__</div>
       <div class="sidebar-search-wrap">
-        <input class="sidebar-search" id="sidebar-search" type="text" placeholder="Trova una chat..." />
+        <input class="sidebar-search" id="sidebar-search" type="text" placeholder="__SEARCH_CHATS__" />
       </div>
       <div class="session-list" id="session-list"></div>
     </aside>
-    <div class="divider" id="sidebar-divider" title="Trascina per ridimensionare"></div>
+    <div class="divider" id="sidebar-divider" title="__DIVIDER_RESIZE__"></div>
     <div class="content-shell">
       <header class="topbar">
         <div class="topbar-copy">
-          <div class="eyebrow">Workspace locale</div>
-          <div class="title" id="chat-title">Chat locale</div>
-          <div class="subtitle" id="chat-subtitle">Traduci, analizza screenshot e continua la conversazione.</div>
+          <div class="eyebrow">__WORKSPACE_LOCAL__</div>
+          <div class="title" id="chat-title">__CHAT_LOCAL__</div>
         </div>
         <div class="topbar-meta">
-          <div class="badge" id="badge-backend">Backend: non selezionato</div>
-          <div class="badge" id="badge-model">Modello: non selezionato</div>
+          <div class="badge" id="badge-backend">__BACKEND_BADGE__</div>
+          <div class="badge" id="badge-model">__MODEL_BADGE__</div>
         </div>
       </header>
       <main class="messages" id="messages"></main>
@@ -1693,14 +1296,15 @@ class CodexWebChatWindow(QWidget):
         <div class="status" id="status-line"></div>
         <div class="composer-card">
           <form class="composer-form" id="composer-form">
-            <textarea id="composer-input" placeholder="Scrivi un messaggio, chiedi una traduzione o continua un'analisi..."></textarea>
-            <button type="submit" id="composer-send">Invia</button>
+            <textarea id="composer-input" placeholder="__COMPOSER_PLACEHOLDER__"></textarea>
+            <button type="submit" id="composer-send">__SEND__</button>
           </form>
         </div>
       </footer>
     </div>
   </div>
   <script>
+    const UI = __UI_JSON__;
     let bridge = null;
     let latestState = null;
     let isDraggingDivider = false;
@@ -1741,7 +1345,7 @@ class CodexWebChatWindow(QWidget):
       if (!filteredSessions.length) {
         const empty = document.createElement("div");
         empty.className = "session-empty";
-        empty.textContent = query ? "Nessuna chat trovata per questa ricerca." : "Nessuna chat disponibile.";
+        empty.textContent = query ? UI.emptySearch : UI.emptyChats;
         list.appendChild(empty);
         return;
       }
@@ -1755,10 +1359,10 @@ class CodexWebChatWindow(QWidget):
               <div class="session-meta">${escapeHtml(session.meta)}</div>
             </div>
             <div class="session-actions">
-              <button type="button" class="session-menu-button" title="Azioni chat" aria-label="Azioni chat">⋯</button>
+              <button type="button" class="session-menu-button" title="${UI.chatActions}" aria-label="${UI.chatActions}">⋯</button>
               <div class="session-menu">
-                <button type="button" class="session-menu-item" data-action="rename">Rinomina</button>
-                <button type="button" class="session-menu-item destructive" data-action="delete">Elimina</button>
+                <button type="button" class="session-menu-item" data-action="rename">${UI.rename}</button>
+                <button type="button" class="session-menu-item destructive" data-action="delete">${UI.delete}</button>
               </div>
             </div>
           </div>`;
@@ -1775,7 +1379,7 @@ class CodexWebChatWindow(QWidget):
           closeAllSessionMenus();
           const timestampSuffix = new RegExp("\\\\s+\\\\(\\\\d{2}/\\\\d{2}\\\\s+\\\\d{2}:\\\\d{2}\\\\)\\\\s*$");
           const currentLabel = session.label.replace(timestampSuffix, "");
-          const renamed = window.prompt("Nuovo nome della chat:", currentLabel);
+          const renamed = window.prompt(UI.renamePrompt, currentLabel);
           if (renamed && renamed.trim() && bridge) {
             bridge.renameSession(session.index, renamed.trim());
           }
@@ -1783,7 +1387,7 @@ class CodexWebChatWindow(QWidget):
         menu.querySelector('[data-action="delete"]').addEventListener("click", (event) => {
           event.stopPropagation();
           closeAllSessionMenus();
-          const confirmed = window.confirm(`Eliminare la chat "${session.label}"?`);
+          const confirmed = window.confirm(UI.deletePrompt.replace("{label}", session.label));
           if (confirmed && bridge) bridge.deleteSession(session.index);
         });
         item.addEventListener("click", () => {
@@ -1796,27 +1400,12 @@ class CodexWebChatWindow(QWidget):
     function renderState(state) {
       latestState = state;
       document.getElementById("chat-title").textContent = state.title;
-      document.getElementById("chat-subtitle").textContent = state.subtitle;
-      document.getElementById("badge-backend").textContent = "Backend: " + state.backend;
-      document.getElementById("badge-model").textContent = "Modello: " + state.model;
+      document.getElementById("badge-backend").textContent = UI.backendPrefix + state.backend;
+      document.getElementById("badge-model").textContent = UI.modelPrefix + state.model;
       document.getElementById("status-line").textContent = state.status;
       renderSessions(state);
       const messages = document.getElementById("messages");
       messages.innerHTML = "";
-      if (state.showWelcome) {
-        const welcome = document.createElement("section");
-        welcome.className = "welcome";
-        welcome.innerHTML = `
-          <div class="eyebrow">Pronto all'analisi</div>
-          <h1>Una chat desktop sobria, veloce e focalizzata sul lavoro.</h1>
-          <p>Screenshot, clipboard e follow-up convivono in una UI più vicina a Codex: meno bolle, più testo, più spazio e una gerarchia visiva pulita.</p>
-          <div class="welcome-grid">
-            <div class="welcome-card">Screenshot area<br>Cattura una porzione di schermo e chiedi traduzioni o analisi.</div>
-            <div class="welcome-card">Clipboard intelligente<br>Prendi testo da qualsiasi app e trasformalo in contesto utile.</div>
-            <div class="welcome-card">Sessioni persistenti<br>Riprendi il filo senza perdere modello, backend o immagini.</div>
-          </div>`;
-        messages.appendChild(welcome);
-      }
       state.messages.forEach((message) => {
         const wrapper = document.createElement("article");
         wrapper.className = "message " + message.role;
@@ -1905,6 +1494,19 @@ class CodexWebChatWindow(QWidget):
   </script>
 </body>
 </html>"""
+        return (html
+                .replace("__LANG__", self.language)
+            .replace("__NEW_CHAT__", ui["newChat"])
+            .replace("__RECENT_SESSIONS__", ui["recentSessions"])
+            .replace("__SEARCH_CHATS__", ui["searchChats"])
+            .replace("__WORKSPACE_LOCAL__", ui["workspaceLocal"])
+            .replace("__CHAT_LOCAL__", ui["chatLocal"])
+            .replace("__BACKEND_BADGE__", ui["backendBadge"])
+            .replace("__MODEL_BADGE__", ui["modelBadge"])
+            .replace("__DIVIDER_RESIZE__", ui["dividerResize"])
+            .replace("__COMPOSER_PLACEHOLDER__", ui["composerPlaceholder"])
+            .replace("__SEND__", ui["send"])
+            .replace("__UI_JSON__", json.dumps(ui, ensure_ascii=False)))
 
     def on_web_load_finished(self, ok):
         self.web_ready = ok
@@ -1927,24 +1529,24 @@ class CodexWebChatWindow(QWidget):
                 image_urls.append(f"data:image/png;base64,{base64.b64encode(image_bytes).decode('utf-8')}")
             messages.append({
                 "role": item["role"],
-                "label": "Tu" if item["role"] == "user" else "Assistente locale",
+                "label": tr("you", self.language) if item["role"] == "user" else tr("assistant_local", self.language),
                 "html": self.message_to_html(item["content"]),
                 "images": image_urls,
             })
 
-        title = "Conversazione attiva" if self.history else "Chat locale"
-        subtitle = "Interfaccia in webview per una chat più vicina a un'app desktop moderna." if self.history else "Traduci, analizza screenshot e continua la conversazione."
-        status = f"Generazione in corso con {self.model or 'il modello selezionato'}..." if self.is_generating else (f"Pronto ({self.model})" if self.model else "Pronto")
+        title = tr("active_conversation", self.language) if self.history else tr("chat_local", self.language)
+        selected_model_label = tr("selected_model_label", self.language)
+        status = tr("status_generating", self.language, model=self.model or selected_model_label) if self.is_generating else (tr("status_ready_model", self.language, model=self.model) if self.model else tr("ready", self.language))
         sessions = []
         for index, session in enumerate(self.sessions_cache):
             real_index = index
-            label = session.get("label", f"Sess {real_index+1}")
+            label = session.get("label", tr("session_fallback", self.language, index=real_index + 1))
             meta_parts = []
             if session.get("backend"):
                 meta_parts.append(session["backend"])
             if session.get("model"):
                 meta_parts.append(session["model"])
-            meta = " • ".join(meta_parts) if meta_parts else "Sessione salvata"
+            meta = " • ".join(meta_parts) if meta_parts else tr("saved_session", self.language)
             sessions.append({
                 "index": real_index,
                 "label": label,
@@ -1953,9 +1555,8 @@ class CodexWebChatWindow(QWidget):
             })
         return {
             "title": title,
-            "subtitle": subtitle,
-            "backend": self.backend or "non selezionato",
-            "model": self.model or "non selezionato",
+            "backend": self.backend or tr("not_selected", self.language),
+            "model": self.model or tr("not_selected", self.language),
             "status": status,
             "busy": self.is_generating,
             "showWelcome": len(self.history) == 0,
@@ -1998,6 +1599,7 @@ class CodexWebChatWindow(QWidget):
     def load_session(self, idx, hist, model, backend, is_new=False, bring_forward=False):
         self.idx, self.history, self.model, self.backend = idx, hist, model, backend
         self.current_session_idx = idx
+        self.is_generating = False
         self.render_web_state(force_scroll=True)
         if bring_forward:
             self.bring_to_front()
@@ -2021,17 +1623,36 @@ class CodexWebChatWindow(QWidget):
         self.history_updated.emit(self.idx, self.history)
 
     def ask_ai(self):
+        request_idx = self.idx
+        request_model = self.model
+        request_backend = self.backend
         self.is_generating = True
         self.render_web_state()
-        self.worker = AIWorker(list(self.history), self.model, self.backend, self.backend_urls)
-        self.worker.finished.connect(self.on_res)
-        self.worker.start()
+        worker = AIWorker(list(self.history), request_model, request_backend, self.backend_urls, AIBackend.OLLAMA, self.language)
+        self.active_workers.append(worker)
+        worker.finished.connect(
+            lambda text, hist, request_idx=request_idx, request_model=request_model, request_backend=request_backend, worker=worker:
+            self.on_res(request_idx, request_model, request_backend, text, hist, worker)
+        )
+        worker.start()
 
-    def on_res(self, text, hist):
-        self.history = hist
-        self.is_generating = False
-        self.render_web_state(force_scroll=True)
-        self.history_updated.emit(self.idx, self.history)
+    def on_res(self, request_idx, request_model, request_backend, text, hist, worker):
+        if worker in self.active_workers:
+            self.active_workers.remove(worker)
+
+        if 0 <= request_idx < len(self.sessions_cache):
+            self.sessions_cache[request_idx]["history"] = hist
+            self.sessions_cache[request_idx]["model"] = request_model
+            self.sessions_cache[request_idx]["backend"] = request_backend
+
+        if request_idx == self.idx:
+            self.history = hist
+            self.model = request_model
+            self.backend = request_backend
+            self.is_generating = False
+            self.render_web_state(force_scroll=True)
+
+        self.history_updated.emit(request_idx, hist)
 
 
 class MainApp:
@@ -2040,19 +1661,18 @@ class MainApp:
         self.app.setQuitOnLastWindowClosed(False)
         self.active_backend = AIBackend.OLLAMA
         self.active_model = ""
+        self.language = "it"
         self.sessions = []
-        self.native_snip_timer = None
-        self.native_snip_deadline = 0
-        self.native_snip_last_hash = None
         
         # Load configuration
         self.backend_urls = self.load_config()
+        self.language = self.backend_urls.get("language", "it")
         
         # Initialize SQLite database for history
         self.init_db()
         self.load_history_from_db()
         
-        self.chat_window = CodexWebChatWindow(self.backend_urls)
+        self.chat_window = CodexWebChatWindow(self.backend_urls, self.language)
         self.chat_window.session_factory = self.start_new_session_ui
         self.chat_window.history_updated.connect(self.save_updated_history)
         self.chat_window.session_selected.connect(self.restore)
@@ -2068,19 +1688,15 @@ class MainApp:
         self.app_icon = QIcon(icon_path) if os.path.exists(icon_path) else self.app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
         self.tray = QSystemTrayIcon(self.app_icon)
         self.chat_window.setWindowIcon(self.app_icon)
+        self.tray_controller = TrayController(self, AIBackend)
         
         self.refresh_mods()
         self.update_menu()
         self.tray.show()
 
-    def load_history_from_disk(self):
-        # This method is now deprecated since we're using the database
-        # Keeping it for backward compatibility but it won't be called anymore
-        pass
-
     def start_new_session_ui(self):
         idx = len(self.sessions)
-        label = f"Nuova chat ({datetime.now().strftime('%d/%m %H:%M')})"
+        label = tr("new_chat_label", self.language, timestamp=datetime.now().strftime('%d/%m %H:%M'))
         session = {
             'label': label,
             'history': [],
@@ -2095,23 +1711,25 @@ class MainApp:
 
     def load_config(self):
         """Load backend configuration from config.json or return defaults"""
-        if os.path.exists(CONFIG_FILE):
-            try:
-                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except:
-                pass
-        return DEFAULT_CONFIG.copy()
+        return load_runtime_config(CONFIG_FILE)
     
     def save_config(self, config):
         """Save backend configuration to config.json"""
         try:
-            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                json.dump(config, f, indent=4, ensure_ascii=False)
+            save_runtime_config(config, CONFIG_FILE)
             self.backend_urls = config
-            QMessageBox.information(None, "Configurazione", "Configurazione salvata con successo!")
+            self.language = config.get("language", self.language)
+            QMessageBox.information(
+                None,
+                tr("config_title", self.language),
+                tr("config_saved_success", self.language)
+            )
         except Exception as e:
-            QMessageBox.warning(None, "Errore", f"Errore nel salvataggio: {str(e)}")
+            QMessageBox.warning(
+                None,
+                tr("error", self.language),
+                tr("save_error", self.language, message=str(e))
+            )
     
     def open_config_dialog(self):
         """Open configuration dialog"""
@@ -2120,195 +1738,73 @@ class MainApp:
         
         # Create dialog with chat_window as parent if it exists to improve centering
         parent = self.chat_window if self.chat_window.isVisible() else None
-        dialog = ConfigDialog(self.backend_urls, parent)
+        dialog = ConfigDialog(
+            self.backend_urls,
+            [
+                AIBackend.OLLAMA,
+                AIBackend.LM_STUDIO,
+                AIBackend.LLAMA_CPP,
+                AIBackend.LLAMA_SWAP,
+                AIBackend.OPENAI_COMPATIBLE,
+            ],
+            self.language,
+            parent,
+        )
         
         if dialog.exec() == QDialog.DialogCode.Accepted:
             new_config = dialog.get_config()
             self.save_config(new_config)
+            self.chat_window.language = self.language
+            self.chat_window.setWindowTitle(tr("window_title", self.language))
+            self.chat_window.web_ready = False
+            self.chat_window.web_view.setHtml(self.chat_window.build_chat_html())
+            self.chat_window.render_web_state()
             self.refresh_mods()
             self.update_menu()
 
     def load_history_from_disk(self):
         if os.path.exists(HISTORY_FILE):
-            try:
-                with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-                    loaded = json.load(f)
-                    for s in loaded:
-                        for m in s['history']:
-                            if 'images' in m: m['images'] = [base64.b64decode(img) for img in m['images']]
-                    self.sessions = loaded
-            except: pass
+            self.sessions = load_legacy_history(HISTORY_FILE)
 
     def init_db(self):
         """Initialize the SQLite database for chat history"""
         try:
-            conn = sqlite3.connect(CHAT_DB_FILE)
-            cursor = conn.cursor()
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS sessions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    label TEXT NOT NULL,
-                    model TEXT,
-                    backend TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    is_deleted INTEGER DEFAULT 0
-                )
-            ''')
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS messages (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    session_id INTEGER,
-                    role TEXT NOT NULL,
-                    content TEXT NOT NULL,
-                    images TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (session_id) REFERENCES sessions (id)
-                )
-            ''')
-            conn.commit()
-            conn.close()
+            init_db(CHAT_DB_FILE)
         except Exception as e:
             print(f"Error initializing database: {e}")
 
     def load_history_from_db(self):
         """Load chat history from SQLite database"""
         try:
-            conn = sqlite3.connect(CHAT_DB_FILE)
-            cursor = conn.cursor()
-            # Load only non-deleted sessions
-            cursor.execute('''
-                SELECT id, label, model, backend, created_at, updated_at
-                FROM sessions 
-                WHERE is_deleted = 0
-                ORDER BY updated_at DESC, created_at DESC, id DESC
-            ''')
-            sessions_data = cursor.fetchall()
-            
-            for session_data in sessions_data:
-                session_id, label, model, backend, created_at, updated_at = session_data
-                # Load messages for this session
-                cursor.execute('''
-                    SELECT role, content, images
-                    FROM messages
-                    WHERE session_id = ?
-                    ORDER BY created_at ASC
-                ''', (session_id,))
-                messages_data = cursor.fetchall()
-                
-                # Convert messages to proper format
-                history = []
-                for role, content, images in messages_data:
-                    message = {'role': role, 'content': content}
-                    if images:
-                        # Decode base64 images if they exist
-                        try:
-                            image_list = json.loads(images)
-                            message['images'] = [base64.b64decode(img) for img in image_list]
-                        except:
-                            pass
-                    history.append(message)
-                
-                # Add to sessions list
-                self.sessions.append({
-                    'id': session_id,
-                    'label': label,
-                    'model': model,
-                    'backend': backend,
-                    'history': history,
-                    'created_at': created_at,
-                    'updated_at': updated_at
-                })
-            
-            conn.close()
+            self.sessions = load_sessions_from_db(CHAT_DB_FILE)
         except Exception as e:
             print(f"Error loading history from database: {e}")
 
-    def sort_sessions(self, current_session=None):
-        def sort_key(session):
-            return (
-                session.get('updated_at') or "",
-                session.get('created_at') or "",
-                session.get('id') or 0,
+    def save_updated_history(self, i, h):
+        try:
+            visible_session = None
+            if 0 <= self.chat_window.idx < len(self.sessions):
+                visible_session = self.sessions[self.chat_window.idx]
+
+            new_index = persist_session_update(
+                self.sessions,
+                i,
+                h,
+                self.active_model,
+                self.active_backend,
+                CHAT_DB_FILE,
             )
 
-        self.sessions.sort(key=sort_key, reverse=True)
-        if current_session is None:
-            return -1
-        try:
-            return self.sessions.index(current_session)
-        except ValueError:
-            return -1
-
-    def save_updated_history(self, i, h):
-        if i < 0 or i >= len(self.sessions):
-            return -1
-
-        self.sessions[i]['history'] = h
-        self.sessions[i]['model'] = self.active_model
-        self.sessions[i]['backend'] = self.active_backend
-
-        if h:
-            first_user_message = next((msg.get('content', '').strip() for msg in h if msg.get('role') == 'user' and msg.get('content')), "")
-            if first_user_message:
-                base_label = first_user_message[:30] + "..." if len(first_user_message) > 30 else first_user_message
-                current_label = self.sessions[i].get('label', '')
-                if current_label.startswith("Nuova chat (") or current_label.startswith("Ciao! Come posso aiutarti oggi?"):
-                    timestamp = datetime.now().strftime('%d/%m %H:%M')
-                    self.sessions[i]['label'] = f"{base_label} ({timestamp})"
-
-        # Update the session in database instead of JSON file
-        try:
-            conn = sqlite3.connect(CHAT_DB_FILE)
-            cursor = conn.cursor()
-            
-            # Check if session already has an ID (i.e., it was loaded from database)
-            if 'id' in self.sessions[i] and self.sessions[i]['id'] is not None:
-                session_id = self.sessions[i]['id']
-                # Update existing session
-                cursor.execute('''
-                    UPDATE sessions 
-                    SET label = ?, model = ?, backend = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                ''', (self.sessions[i]['label'], self.active_model, self.active_backend, session_id))
+            if visible_session is not None:
+                try:
+                    selected_index = self.sessions.index(visible_session)
+                except ValueError:
+                    selected_index = new_index
             else:
-                # For new sessions, we need to create a new session entry and get the ID
-                cursor.execute('''
-                    INSERT INTO sessions (label, model, backend)
-                    VALUES (?, ?, ?)
-                ''', (self.sessions[i]['label'], self.active_model, self.active_backend))
-                session_id = cursor.lastrowid
-                # Store the ID in our session data for future updates
-                self.sessions[i]['id'] = session_id
-            
-            # Delete existing messages for this session
-            cursor.execute('DELETE FROM messages WHERE session_id = ?', (session_id,))
-            
-            # Insert new messages
-            for msg in h:
-                images = None
-                if 'images' in msg and msg['images']:
-                    try:
-                        image_list = [base64.b64encode(img).decode('utf-8') if isinstance(img, bytes) else img for img in msg['images']]
-                        images = json.dumps(image_list)
-                    except:
-                        pass
-                cursor.execute('''
-                    INSERT INTO messages (session_id, role, content, images)
-                    VALUES (?, ?, ?, ?)
-                ''', (session_id, msg['role'], msg['content'], images))
-            
-            conn.commit()
-            conn.close()
-            now_str = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-            if 'created_at' not in self.sessions[i] or not self.sessions[i]['created_at']:
-                self.sessions[i]['created_at'] = now_str
-            self.sessions[i]['updated_at'] = now_str
+                selected_index = new_index
 
-            current_session = self.sessions[i]
-            new_index = self.sort_sessions(current_session)
-            self.chat_window.idx = new_index
-            self.chat_window.update_sidebar(self.sessions, new_index)
+            self.chat_window.idx = selected_index
+            self.chat_window.update_sidebar(self.sessions, selected_index)
             return new_index
         except Exception as e:
             print(f"Error saving history to database: {e}")
@@ -2317,206 +1813,64 @@ class MainApp:
     def clear_history_db(self):
         """Clear all history from the database"""
         try:
-            conn = sqlite3.connect(CHAT_DB_FILE)
-            cursor = conn.cursor()
-            cursor.execute('UPDATE sessions SET is_deleted = 1')
-            conn.commit()
-            conn.close()
+            clear_history_db(CHAT_DB_FILE)
         except Exception as e:
             print(f"Error clearing database: {e}")
 
     def rename_session(self, idx, new_label):
-        if idx < 0 or idx >= len(self.sessions):
-            return
-
-        label = (new_label or "").strip()
-        if not label:
-            return
-
-        session = self.sessions[idx]
-        old_label = session.get('label', '')
-        timestamp_match = re.search(r'(\(\d{2}/\d{2}\s+\d{2}:\d{2}\))\s*$', old_label)
-        if timestamp_match and timestamp_match.group(1) not in label:
-            label = f"{label} {timestamp_match.group(1)}"
-
-        session['label'] = label
-
         try:
-            if session.get('id') is not None:
-                conn = sqlite3.connect(CHAT_DB_FILE)
-                cursor = conn.cursor()
-                cursor.execute('UPDATE sessions SET label = ? WHERE id = ?', (label, session['id']))
-                conn.commit()
-                conn.close()
+            changed = rename_stored_session(self.sessions, idx, new_label, CHAT_DB_FILE)
+            if not changed:
+                return
         except Exception as e:
             print(f"Error renaming session in database: {e}")
+            return
 
         self.chat_window.update_sidebar(self.sessions, self.chat_window.idx)
         self.chat_window.render_web_state()
 
     def delete_session(self, idx):
-        if idx < 0 or idx >= len(self.sessions):
-            return
-
-        session = self.sessions[idx]
         try:
-            conn = sqlite3.connect(CHAT_DB_FILE)
-            cursor = conn.cursor()
-            if session.get('id') is not None:
-                cursor.execute('UPDATE sessions SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', (session['id'],))
-                conn.commit()
-            conn.close()
+            result = delete_stored_session(self.sessions, idx, CHAT_DB_FILE)
         except Exception as e:
             print(f"Error deleting session from database: {e}")
+            return
 
-        del self.sessions[idx]
+        if result is None:
+            return
 
-        if not self.sessions:
+        if result["session"] is None:
             self.chat_window.update_sidebar([], -1)
             self.chat_window.load_session(-1, [], self.active_model, self.active_backend, is_new=False, bring_forward=False)
             return
 
-        new_idx = min(idx, len(self.sessions) - 1)
+        new_idx = result["new_index"]
         self.chat_window.update_sidebar(self.sessions, new_idx)
-        target = self.sessions[new_idx]
+        target = result["session"]
         self.chat_window.load_session(new_idx, target['history'], target['model'], target['backend'], is_new=False, bring_forward=False)
 
 
     def refresh_mods(self):
-        try:
-            if self.active_backend == AIBackend.OLLAMA:
-                base_url = self.backend_urls.get("backends", {}).get(self.active_backend, "").strip()
-                if base_url:
-                    response = requests.get(f"{base_url.rstrip('/')}/api/tags", timeout=4)
-                    response.raise_for_status()
-                    ms = [m.get('model') for m in response.json().get('models', []) if m.get('model')]
-                else:
-                    ms = [m['model'] if isinstance(m, dict) else m.model for m in ollama.list().get('models', [])]
-            else:
-                base_url = self.backend_urls.get("backends", {}).get(self.active_backend, "").strip()
-                if not base_url:
-                    return ["URL non configurato"]
-                response = requests.get(openai_models_url(base_url), timeout=4)
-                response.raise_for_status()
-                ms = [m.get('id') for m in response.json().get('data', []) if m.get('id')]
-            if ms:
-                if self.active_model not in ms: self.active_model = ms[0]
-            return ms
-        except: return ["Offline"]
+        return self.tray_controller.refresh_models()
 
     def update_menu(self):
-        m = QMenu()
-        m.addAction("📸 Analizza Area (Rettangolo)", self.start_vision)
-        m.addAction("📋 Analizza Testo Copiato", self.start_text_grab)
-        m.addSeparator()
-        m.addAction("💬 Apri Chat", self.chat_window.show)
-        m.addSeparator()
-        m.addAction("⚙️ Configura Backend", self.open_config_dialog)
-        m.addSeparator()
-        bk = m.addMenu("⚙️ Motore AI")
-        backend_list = [AIBackend.OLLAMA, AIBackend.LM_STUDIO, AIBackend.LLAMA_CPP, AIBackend.LLAMA_SWAP]
-        custom_backend_url = self.backend_urls.get("backends", {}).get(AIBackend.OPENAI_COMPATIBLE, "").strip()
-        if custom_backend_url:
-            backend_list.append(AIBackend.OPENAI_COMPATIBLE)
-        for b in backend_list:
-            a = bk.addAction(b); a.setCheckable(True); a.setChecked(self.active_backend == b)
-            a.triggered.connect(partial(self.set_bk, b))
-        mods = self.refresh_mods()
-        mm = m.addMenu(f"🤖 Modelli")
-        for x in mods:
-            a = mm.addAction(x); a.setCheckable(True); a.setChecked(self.active_model == x)
-            a.triggered.connect(partial(self.set_mod, x))
-        m.addSeparator()
-        m.addAction("❌ Esci", self.app.quit)
-        self.tray.setContextMenu(m)
+        self.tray_controller.update_menu()
 
     def clear_all_history(self):
-        if QMessageBox.question(None, 'Conferma', "Cancellare tutta la cronologia?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No) == QMessageBox.StandardButton.Yes:
+        if QMessageBox.question(None, tr("clear_history_title", self.language), tr("clear_history_body", self.language), QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No) == QMessageBox.StandardButton.Yes:
             self.sessions = []; self.chat_window.update_sidebar([])
             # Clear database
             self.clear_history_db()
             if os.path.exists(HISTORY_FILE): os.remove(HISTORY_FILE)
 
-    def set_bk(self, b): self.active_backend = b; self.refresh_mods(); self.update_menu()
-    def set_mod(self, x): self.active_model = x; self.update_menu()
-    def start_vision(self):
-        self.tray.contextMenu().hide()
-        QApplication.processEvents()
-        time.sleep(0.15)
-        self.start_native_screen_snip()
-
-    def start_native_screen_snip(self):
-        self.native_snip_last_hash = self.get_clipboard_image_hash()
-        self.native_snip_deadline = time.time() + 20
-        if self.native_snip_timer is None:
-            self.native_snip_timer = QTimer()
-            self.native_snip_timer.setInterval(250)
-            self.native_snip_timer.timeout.connect(self.poll_native_screen_snip)
-        self.native_snip_timer.start()
-        try:
-            os.startfile("ms-screenclip:")
-        except OSError:
-            self.native_snip_timer.stop()
-            self.snipper = SnippingTool(self.process)
-
-    def get_clipboard_image_hash(self):
-        try:
-            clip = ImageGrab.grabclipboard()
-            if isinstance(clip, Image.Image):
-                img = clip.convert("RGB")
-                return hash(img.tobytes())
-        except Exception:
-            pass
-        return None
-
-    def poll_native_screen_snip(self):
-        if time.time() > self.native_snip_deadline:
-            self.native_snip_timer.stop()
-            return
-
-        try:
-            clip = ImageGrab.grabclipboard()
-        except Exception:
-            return
-
-        if not isinstance(clip, Image.Image):
-            return
-
-        image = clip.convert("RGB")
-        current_hash = hash(image.tobytes())
-        if current_hash == self.native_snip_last_hash:
-            return
-
-        self.native_snip_timer.stop()
-        self.native_snip_last_hash = current_hash
-        self.process(image_to_png_bytes(image), False)
-
-    def start_text_grab(self):
-        self.tray.contextMenu().hide(); QApplication.processEvents(); time.sleep(0.4)
-        pyautogui.hotkey('ctrl', 'c'); time.sleep(0.3)
-        txt = pyperclip.paste()
-        if txt.strip(): self.process(f"Analizza e spiega questo testo in italiano:\n\n{txt}", True)
-
-    def process(self, data, is_txt):
-        idx = len(self.sessions)
-        if is_txt: 
-            hist = [{'role': 'user', 'content': data}]
-            # Generate a label based on the first user message content
-            label = data[:30] + "..." if len(data) > 30 else data
-        else:
-            p = "Analizza questa immagine. Se vedi testo, traducilo in italiano. Spiega errori o codice. Rispondi in italiano."
-            hist = [{'role': 'user', 'content': p, 'images': [data]}]
-            label = "Analisi Immagine"
-        self.sessions.append({'label': f"{label} ({datetime.now().strftime('%d/%m %H:%M')})", 'history': hist, 'model': self.active_model, 'backend': self.active_backend})
-        new_idx = self.save_updated_history(idx, hist)
-        if new_idx < 0:
-            new_idx = idx
-        self.chat_window.update_sidebar(self.sessions, new_idx)
-        self.chat_window.load_session(new_idx, hist, self.active_model, self.active_backend, is_new=True, bring_forward=True)
-
-    def restore(self, i):
-        s = self.sessions[i]
-        self.chat_window.load_session(i, s['history'], s['model'], s['backend'], bring_forward=False)
+    def set_bk(self, b): self.tray_controller.set_backend(b)
+    def set_mod(self, x): self.tray_controller.set_model(x)
+    def start_vision(self): self.tray_controller.start_vision()
+    def start_native_screen_snip(self): self.tray_controller.start_native_screen_snip()
+    def poll_native_screen_snip(self): self.tray_controller.poll_native_screen_snip()
+    def start_text_grab(self): self.tray_controller.start_text_grab()
+    def process(self, data, is_txt): self.tray_controller.process(data, is_txt)
+    def restore(self, i): self.tray_controller.restore_session(i)
 
     def run(self): sys.exit(self.app.exec())
 

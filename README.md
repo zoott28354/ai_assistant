@@ -1,4 +1,4 @@
-# 👁️ AI Assistant v3.3
+# 👁️ AI Assistant v3.4
 
 Un assistente AI locale per Windows pensato per lavorare davvero bene dal desktop: cattura schermate, legge testo dagli appunti, invia immagini o prompt ai tuoi modelli locali e mantiene una cronologia persistente delle conversazioni.
 
@@ -10,9 +10,9 @@ L'idea del progetto è semplice: avere un assistente sempre pronto nella system 
 - 🤖 **Più backend supportati**: Ollama, LM Studio, Llama.cpp e Llama-Swap.
 - ⚡ **Flusso rapido da desktop**: parti da una cattura schermo o da un testo copiato e continui subito in chat.
 - 🧠 **Cronologia persistente**: le sessioni vengono salvate in SQLite e riprese in seguito.
-- 🖥️ **UI aggiornata in v3.3**: chat più moderna in webview, sidebar migliorata e flussi più stabili.
+- 🖥️ **UI aggiornata in v3.4**: chat più moderna in webview, sidebar migliorata, flussi più stabili e supporto iniziale multilingua.
 
-## 🚀 Novità della v3.3
+## 🚀 Novità della v3.4
 
 - 💬 Nuova chat desktop con rendering web-based integrato in PyQt.
 - 📚 Sidebar cronologia più leggibile, ridimensionabile e con eliminazione singola delle chat.
@@ -21,6 +21,7 @@ L'idea del progetto è semplice: avere un assistente sempre pronto nella system 
 - 📸 `Analizza Area` ora usa il ritaglio nativo di Windows.
 - 🌈 Migliore compatibilità pratica con sistemi HDR grazie al passaggio al capture nativo.
 - 🧩 Supporto esplicito a `PyQt6-WebEngine` per la nuova UI.
+- 🌍 Interfaccia multilingua con base italiana e inglese.
 
 ## 🛠️ Funzioni principali
 
@@ -145,7 +146,7 @@ Il progetto salva dati locali in questi file:
 ## 🧪 Note tecniche
 
 - La shell dell'app è costruita in **PyQt6**.
-- La chat `v3.3` usa una **webview** (`PyQt6-WebEngine`) per ottenere una UI più moderna e flessibile.
+- La chat `v3.4` usa una **webview** (`PyQt6-WebEngine`) per ottenere una UI più moderna e flessibile.
 - Le sessioni sono memorizzate in **SQLite**.
 - Per i backend OpenAI-compatible locali viene usato il client `openai` con `base_url` custom.
 - Per Ollama viene usata l'integrazione Python dedicata.
@@ -156,7 +157,7 @@ Il progetto salva dati locali in questi file:
 Se preferisci una build pronta all'uso:
 
 1. Vai su [Releases](https://github.com/zoott28354/ai_assistant/releases)
-2. Scarica `AI_Assistant_Setup_v3.3.exe`
+2. Scarica `AI_Assistant_Setup_v3.4.exe`
 3. Installa l'app normalmente
 4. Se Windows mostra SmartScreen, scegli **"Ulteriori informazioni"** e poi **"Esegui comunque"**
 
@@ -173,7 +174,7 @@ Per il testo completo vedi [LICENSE](E:\AI_Assistant.claude\LICENSE).
 
 ## 📈 Stato del progetto
 
-La `v3.3` è una versione più matura rispetto alla precedente `v3.2`, soprattutto per:
+La `v3.4` è una versione più matura rispetto alla precedente `v3.2`, soprattutto per:
 
 - 💬 UI chat
 - 🗂️ gestione cronologia

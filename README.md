@@ -1,94 +1,95 @@
-# 👁️ AI Assistant v3.4
+# AI Assistant v3.4
 
-Un assistente AI locale per Windows pensato per lavorare davvero bene dal desktop: cattura schermate, legge testo dagli appunti, invia immagini o prompt ai tuoi modelli locali e mantiene una cronologia persistente delle conversazioni.
+AI Assistant is a local desktop companion for Windows built for real day-to-day use: capture part of the screen, read copied text, send prompts or images to your local models, and keep a persistent conversation history ready for follow-up.
 
-L'idea del progetto è semplice: avere un assistente sempre pronto nella system tray per tradurre, spiegare, analizzare immagini, leggere errori a schermo e continuare il flusso in chat senza dipendere dal cloud.
+The idea is simple: keep an assistant in the system tray that is always ready to translate, explain, analyze images, inspect on-screen errors, and continue the flow in chat without relying on the cloud.
 
-## ✨ Perché usarlo
+## Why use it
 
-- 🔒 **Tutto resta locale**: screenshot, testo copiato e cronologia non vengono inviati a servizi esterni.
-- 🤖 **Più backend supportati**: Ollama, LM Studio, Llama.cpp e Llama-Swap.
-- ⚡ **Flusso rapido da desktop**: parti da una cattura schermo o da un testo copiato e continui subito in chat.
-- 🧠 **Cronologia persistente**: le sessioni vengono salvate in SQLite e riprese in seguito.
-- 🖥️ **UI aggiornata in v3.4**: chat più moderna in webview, sidebar migliorata, flussi più stabili e supporto multilingua dell'interfaccia.
+- Everything stays local: screenshots, copied text, configuration, and chat history are stored on your machine.
+- Multiple local backends are supported: Ollama, LM Studio, Llama.cpp, Llama-Swap, and generic OpenAI-compatible endpoints.
+- Fast desktop-first workflow: start from the tray, analyze an area or copied text, then continue in chat.
+- Persistent sessions: conversations are stored in SQLite and can be resumed later.
+- Updated v3.4 UI: improved webview-based chat, better sidebar, multilingual interface, and cleaner internal architecture.
 
-## 🚀 Novità della v3.4
+## What's new in v3.4
 
-- 💬 Nuova chat desktop con rendering web-based integrato in PyQt.
-- 📚 Sidebar cronologia più leggibile, ridimensionabile e con eliminazione singola delle chat.
-- 🗂️ Persistenza sessioni corretta e ordinamento basato sull'ultima attività.
-- 🖱️ Scroll e comportamento della chat migliorati.
-- 📸 `Analizza Area` ora usa il ritaglio nativo di Windows.
-- 🌈 Migliore compatibilità pratica con sistemi HDR grazie al passaggio al capture nativo.
-- 🧩 Supporto esplicito a `PyQt6-WebEngine` per la nuova UI.
-- 🌍 Interfaccia multilingua con supporto per italiano, inglese, spagnolo, francese, tedesco e portoghese.
+- New integrated desktop chat with modern webview rendering.
+- Better session sidebar with search, rename, delete, and resizing support.
+- More reliable session persistence and ordering based on latest activity.
+- Improved tray-first internal refactor without changing the current workflow.
+- Updated prompts for copied text and image analysis.
+- Native Windows snipping flow for `Analyze Area`.
+- Better practical behavior on HDR systems thanks to native screen capture.
+- Multilingual UI support for Italian, English, Spanish, French, German, and Portuguese.
+- Multilingual Windows installer and multilingual `About` dialog in the tray menu.
 
-## 🛠️ Funzioni principali
+## Main features
 
-- 📸 **Analizza Area**  
-  Apre il ritaglio nativo di Windows, acquisisce la selezione e la invia al modello.
+- `Analyze Area`
+  Opens the native Windows snipping tool, captures the selection, and sends it to the active model.
 
-- 📋 **Analizza Testo Copiato**  
-  Prende il contenuto dagli appunti e lo manda subito in analisi.
+- `Analyze Copied Text`
+  Reads text from the clipboard and sends it directly for translation and analysis.
 
-- 💬 **Chat persistente**  
-  Puoi continuare una conversazione esistente oppure aprirne una nuova.
+- `Persistent Chat`
+  Continue an existing conversation or open a new one without losing context.
 
-- 🔌 **Multi-backend locale**  
-  Scegli backend e modello dal menu nella tray.
+- `Local Multi-Backend Support`
+  Choose backend and model directly from the tray menu.
 
-- ⚙️ **Configurazione backend persistente**  
-  Gli URL vengono salvati in `config.json`.
+- `Persistent Backend Configuration`
+  Backend URLs and interface language are saved in `config.json`.
 
-- 🖼️ **Supporto immagini**  
-  Le richieste con immagini vengono gestite dai backend compatibili.
+- `Image Support`
+  Image-based requests are handled by compatible multimodal backends.
 
-## 🤖 Backend supportati
+## Supported backends
 
-L'app nasce per lavorare con backend locali compatibili con i modelli già installati sulla tua macchina.
+The app is designed for local or self-hosted backends that expose models already available on your machine.
 
 - Ollama
 - LM Studio
 - Llama.cpp
 - Llama-Swap
-- Compatibile OpenAI generico, per endpoint locali o self-hosted come `vLLM` o `LocalAI`
+- Generic OpenAI-compatible endpoints such as `vLLM` or `LocalAI`
 
-Valori di default in [config.json](E:\AI_Assistant.claude\config.json):
+Default values in [config.json](E:\AI_Assistant.claude\config.json):
 
 - `Ollama`: `http://localhost:11434`
 - `LM Studio`: `http://localhost:1234/v1`
 - `Llama.cpp`: `http://localhost:8033/v1`
 - `Llama-Swap`: `http://localhost:8080/v1`
 
-Puoi modificarli direttamente dall'interfaccia, senza toccare i file a mano.
+You can change them directly from the interface without editing files manually.
 
-## 📋 Requisiti
+## Requirements
 
-### Per usare il setup Windows
+### To use the Windows installer
 
-- 🪟 Windows 10 o Windows 11
-- 🧠 Almeno un backend locale attivo tra quelli supportati, se vuoi usare davvero l'assistente
-- 🎮 GPU consigliata per un uso più fluido con modelli vision o multimodali
+- Windows 10 or Windows 11
+- At least one supported local backend running if you want to actually use the assistant
+- A GPU is recommended for smoother use with vision or multimodal models
 
-`Python non serve`: il setup include gia tutto il necessario per avviare l'app.
+Python is not required: the setup already includes the runtime needed to launch the app.
 
-### Per eseguire il progetto da sorgente
+### To run the project from source
 
-- 🪟 Windows 10 o Windows 11
-- 🐍 Python 3.10 o superiore gia installato nel sistema
-- 🧠 Almeno un backend locale attivo tra quelli supportati
-- 🎮 GPU consigliata per un uso più fluido con modelli vision o multimodali
+- Windows 10 or Windows 11
+- Python 3.10 or newer installed on the system
+- At least one supported local backend running
+- A GPU is recommended for smoother use with vision or multimodal models
 
-## 📦 Installazione da sorgente
+## Install from source
 
-Questa sezione serve solo se vuoi clonare il repository e avviare il progetto manualmente.
+This section is only for people who want to clone the repository and run the project manually.
 
-1. Clona o scarica il repository.
-2. Esegui [setup.bat](E:\AI_Assistant.claude\setup.bat).
-3. Attendi la creazione del `venv` e l'installazione delle dipendenze.
-4. Avvia l'app con `start_ai_assistant.bat`.
+1. Clone or download the repository.
+2. Run [setup.bat](E:\AI_Assistant.claude\setup.bat).
+3. Wait for the virtual environment and dependencies to be installed.
+4. Launch the app with `start_ai_assistant.bat`.
 
-Se preferisci farlo manualmente:
+Manual setup:
 
 ```powershell
 python -m venv venv
@@ -97,9 +98,9 @@ python -m venv venv
 .\venv\Scripts\pythonw.exe main.py
 ```
 
-## 📚 Dipendenze principali
+## Main dependencies
 
-Le dipendenze Python sono in [requirements.txt](E:\AI_Assistant.claude\requirements.txt):
+The Python dependencies are listed in [requirements.txt](E:\AI_Assistant.claude\requirements.txt):
 
 - `pyqt6`
 - `pyqt6-webengine`
@@ -112,73 +113,82 @@ Le dipendenze Python sono in [requirements.txt](E:\AI_Assistant.claude\requireme
 - `markdown`
 - `openai`
 
-## 🧭 Come si usa
+## How it works
 
-1. Avvia l'app.
-2. Cerca l'icona nella system tray.
-3. Con click destro puoi:
-   - 💬 aprire la chat
-   - 🤖 scegliere backend e modello
-   - 📸 analizzare un'area dello schermo
-   - 📋 analizzare il testo copiato
-   - ⚙️ aprire la configurazione dei backend
-4. Dopo una cattura o un'analisi, continua la conversazione in chat per fare follow-up.
+1. Launch the app.
+2. Look for the icon in the system tray.
+3. With a right click you can:
+   - open the chat
+   - choose backend and model
+   - analyze an area of the screen
+   - analyze copied text
+   - open backend configuration
+   - open the multilingual `About` dialog
+4. After a capture or analysis, continue the conversation in chat for follow-up.
 
-## 💾 Persistenza e file locali
+## Persistence and local files
 
-Il progetto salva dati locali in questi file:
+The project stores local data in these files:
 
-- [config.json](E:\AI_Assistant.claude\config.json): URL dei backend
-- [chat_history.db](E:\AI_Assistant.claude\chat_history.db): cronologia chat persistente
-- [history_db.json](E:\AI_Assistant.claude\history_db.json): storico legacy o dati precedenti
+- [config.json](E:\AI_Assistant.claude\config.json): backend URLs and interface language
+- [chat_history.db](E:\AI_Assistant.claude\chat_history.db): persistent chat history
+- [history_db.json](E:\AI_Assistant.claude\history_db.json): legacy history file
 
-`chat_history.db` è ignorato dal repository e non dovrebbe essere versionato.
+When installed normally, user data is stored in `%AppData%\AI Assistant`.
 
-## 🗂️ Struttura del repository
+If `portable mode` is selected during setup, data is stored next to the installed app instead.
 
-- [main.py](E:\AI_Assistant.claude\main.py): applicazione principale
-- [requirements.txt](E:\AI_Assistant.claude\requirements.txt): dipendenze Python
-- [config.json](E:\AI_Assistant.claude\config.json): configurazione backend
-- [setup.bat](E:\AI_Assistant.claude\setup.bat): bootstrap ambiente su Windows
-- [ai_assistant.ico](E:\AI_Assistant.claude\ai_assistant.ico): icona dell'app
-- [README.md](E:\AI_Assistant.claude\README.md): documentazione progetto
+During uninstall, the setup asks whether user data should also be removed.
 
-## 🧪 Note tecniche
+## Repository structure
 
-- La shell dell'app è costruita in **PyQt6**.
-- La chat `v3.4` usa una **webview** (`PyQt6-WebEngine`) per ottenere una UI più moderna e flessibile.
-- Le sessioni sono memorizzate in **SQLite**.
-- Per i backend OpenAI-compatible locali viene usato il client `openai` con `base_url` custom.
-- Per Ollama viene usata l'integrazione Python dedicata.
-- `Analizza Area` sfrutta il **ritaglio nativo di Windows** per una resa migliore, soprattutto su sistemi HDR.
+- [main.py](E:\AI_Assistant.claude\main.py): application bootstrap and orchestration
+- [controllers](E:\AI_Assistant.claude\controllers): tray-first controller logic
+- [core](E:\AI_Assistant.claude\core): configuration, i18n, backend helpers
+- [services](E:\AI_Assistant.claude\services): sessions, tray, capture, clipboard
+- [ui](E:\AI_Assistant.claude\ui): dialogs and UI helpers
+- [workers](E:\AI_Assistant.claude\workers): background AI worker
+- [installer.iss](E:\AI_Assistant.claude\installer.iss): Inno Setup installer script
+- [build_installer.bat](E:\AI_Assistant.claude\build_installer.bat): local installer build helper
+- [ai_assistant.ico](E:\AI_Assistant.claude\ai_assistant.ico): application icon
 
-## ⬇️ Download eseguibile
+## Technical notes
 
-Se preferisci una build pronta all'uso:
+- The desktop shell is built with PyQt6.
+- The v3.4 chat uses a `PyQt6-WebEngine` webview for a more flexible modern UI.
+- Sessions are stored in SQLite.
+- OpenAI-compatible local backends use the `openai` client with a custom `base_url`.
+- Ollama uses the dedicated Python integration.
+- `Analyze Area` relies on the native Windows snipping flow for better practical results, especially on HDR systems.
 
-1. Vai su [Releases](https://github.com/zoott28354/ai_assistant/releases)
-2. Scarica `AI_Assistant_Setup_v3.4.exe`
-3. Installa l'app normalmente
-4. Se Windows mostra SmartScreen, scegli **"Ulteriori informazioni"** e poi **"Esegui comunque"**
+## Download
 
-Il setup installa gia l'app con il proprio runtime: non e necessario installare Python separatamente.
+If you want a ready-to-use build:
 
-## 👤 Autore
+1. Go to [Releases](https://github.com/zoott28354/ai_assistant/releases)
+2. Download `AI_Assistant_Setup_v3.4.exe`
+3. Install the app normally
+4. If Windows SmartScreen appears, choose `More info` and then `Run anyway`
 
-Creato e mantenuto da **zoott28354**.
+The setup already includes the runtime needed to launch the application, so Python does not need to be installed separately.
 
-## 📄 Licenza
+## Author
 
-Questo progetto è distribuito con licenza **MIT**.
-Per il testo completo vedi [LICENSE](E:\AI_Assistant.claude\LICENSE).
+Created and maintained by `zoott28354`.
 
-## 📈 Stato del progetto
+## License
 
-La `v3.4` è una versione più matura rispetto alla precedente `v3.2`, soprattutto per:
+This project is released under the MIT license.
+See [LICENSE](E:\AI_Assistant.claude\LICENSE) for the full text.
 
-- 💬 UI chat
-- 🗂️ gestione cronologia
-- 🧱 stabilità del flusso di cattura
-- 🌈 migliore integrazione con il ritaglio nativo di Windows
+## Project status
 
-Se usi backend locali tutti i giorni sul desktop, questa versione punta a essere più affidabile, più leggibile e più comoda nell'uso reale, non solo in demo.
+v3.4 is a more mature version than the previous releases, especially in:
+
+- chat UI
+- session management
+- tray-first workflow stability
+- native Windows capture integration
+- multilingual interface and installer support
+
+If you use local AI backends every day from the desktop, this version is aimed at being more reliable, more readable, and more comfortable in real use, not just in demos.

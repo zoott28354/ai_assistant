@@ -23,6 +23,7 @@ def build_tray_menu(
     menu.addAction(tr("tray_open_chat", language), handlers["open_chat"])
     menu.addSeparator()
     menu.addAction(tr("tray_config_backend", language), handlers["open_config"])
+    menu.addAction(tr("tray_about", language), handlers["open_about"])
     menu.addSeparator()
 
     backend_menu = menu.addMenu(tr("tray_engine", language))

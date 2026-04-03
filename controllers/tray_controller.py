@@ -53,6 +53,7 @@ class TrayController:
                 "start_text_grab": self.start_text_grab,
                 "open_chat": self.owner.chat_window.show,
                 "open_config": self.owner.open_config_dialog,
+                "open_about": self.owner.open_about_dialog,
                 "set_backend": self.set_backend,
                 "set_model": self.set_model,
                 "quit_app": self.owner.app.quit,

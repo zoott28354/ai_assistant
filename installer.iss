@@ -34,24 +34,67 @@ VersionInfoVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription=Local desktop AI assistant with screenshots, translations and persistent chat.
 VersionInfoCopyright=Copyright (c) 2026 zoott28354
+ShowLanguageDialog=auto
+UsePreviousLanguage=no
 
 [Languages]
 Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+Name: "german"; MessagesFile: "compiler:Languages\German.isl"
+Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
+
+[CustomMessages]
+italian.DesktopIcon=Crea un collegamento sul desktop
+english.DesktopIcon=Create a desktop shortcut
+spanish.DesktopIcon=Crear un acceso directo en el escritorio
+french.DesktopIcon=Creer un raccourci sur le bureau
+german.DesktopIcon=Desktopverknuepfung erstellen
+portuguese.DesktopIcon=Criar um atalho na area de trabalho
+
+italian.AdditionalIcons=Collegamenti aggiuntivi:
+english.AdditionalIcons=Additional shortcuts:
+spanish.AdditionalIcons=Accesos directos adicionales:
+french.AdditionalIcons=Raccourcis supplementaires :
+german.AdditionalIcons=Zusaetzliche Verknuepfungen:
+portuguese.AdditionalIcons=Atalhos adicionais:
+
+italian.PortableMode=Salva i dati accanto all'app (modalita portable)
+english.PortableMode=Store data next to the app (portable mode)
+spanish.PortableMode=Guardar los datos junto a la app (modo portable)
+french.PortableMode=Enregistrer les donnees a cote de l'application (mode portable)
+german.PortableMode=Daten neben der App speichern (Portable-Modus)
+portuguese.PortableMode=Salvar os dados ao lado do app (modo portable)
+
+italian.RunApp=Avvia {#MyAppName}
+english.RunApp=Launch {#MyAppName}
+spanish.RunApp=Iniciar {#MyAppName}
+french.RunApp=Lancer {#MyAppName}
+german.RunApp={#MyAppName} starten
+portuguese.RunApp=Iniciar {#MyAppName}
+
+italian.RemoveUserDataPrompt=Vuoi rimuovere anche i dati utente di AI Assistant?%n%nSe scegli "Sì", verranno eliminati cronologia chat, configurazione e file legacy.%nSe scegli "No", i dati verranno conservati per una futura reinstallazione.
+english.RemoveUserDataPrompt=Do you also want to remove AI Assistant user data?%n%nIf you choose "Yes", chat history, configuration and legacy files will be deleted.%nIf you choose "No", the data will be kept for a future reinstall.
+spanish.RemoveUserDataPrompt=Deseas eliminar tambien los datos de usuario de AI Assistant?%n%nSi eliges "Si", se eliminaran el historial del chat, la configuracion y los archivos heredados.%nSi eliges "No", los datos se conservaran para una futura reinstalacion.
+french.RemoveUserDataPrompt=Voulez-vous aussi supprimer les donnees utilisateur de AI Assistant ?%n%nSi vous choisissez "Oui", l'historique du chat, la configuration et les fichiers herites seront supprimes.%nSi vous choisissez "Non", les donnees seront conservees pour une future reinstallation.
+german.RemoveUserDataPrompt=Moechtest du auch die Benutzerdaten von AI Assistant entfernen?%n%nWenn du "Ja" waehlst, werden Chatverlauf, Konfiguration und Legacy-Dateien geloescht.%nWenn du "Nein" waehlst, bleiben die Daten fuer eine spaetere Neuinstallation erhalten.
+portuguese.RemoveUserDataPrompt=Deseja remover tambem os dados do usuario do AI Assistant?%n%nSe escolher "Sim", o historico do chat, a configuracao e os arquivos legados serao removidos.%nSe escolher "Nao", os dados serao mantidos para uma futura reinstalacao.
 
 [Tasks]
-Name: "desktopicon"; Description: "Crea un collegamento sul desktop"; GroupDescription: "Collegamenti aggiuntivi:"; Flags: unchecked
-Name: "portablemode"; Description: "Salva i dati accanto all'app (modalita portable)"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:DesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "portablemode"; Description: "{cm:PortableMode}"; Flags: unchecked
 
 [Files]
 Source: "{#MyAppDistDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
-Name: "{group}\Disinstalla {#MyAppName}"; Filename: "{uninstallexe}"
+Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Avvia {#MyAppName}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:RunApp}"; Flags: nowait postinstall skipifsilent
 
 [Code]
 var
@@ -79,9 +122,7 @@ procedure InitializeUninstallProgressForm();
 begin
   RemoveUserData :=
     MsgBox(
-      'Vuoi rimuovere anche i dati utente di AI Assistant?' + #13#10#13#10 +
-      'Se scegli "Sì", verranno eliminati cronologia chat, configurazione e file legacy.' + #13#10 +
-      'Se scegli "No", i dati verranno conservati per una futura reinstallazione.',
+      ExpandConstant('{cm:RemoveUserDataPrompt}'),
       mbConfirmation,
       MB_YESNO
     ) = IDYES;

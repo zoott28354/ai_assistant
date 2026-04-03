@@ -26,6 +26,7 @@ from services.session_service import (
     persist_session_update,
     rename_session as rename_stored_session,
 )
+from ui.about_dialog import AboutDialog
 from ui.config_dialog import ConfigDialog
 from workers.ai_worker import AIWorker
 
@@ -1761,6 +1762,13 @@ class MainApp:
             self.chat_window.render_web_state()
             self.refresh_mods()
             self.update_menu()
+
+    def open_about_dialog(self):
+        self.tray.contextMenu().hide()
+        parent = self.chat_window if self.chat_window.isVisible() else None
+        dialog = AboutDialog(self.language, parent)
+        dialog.setWindowIcon(self.app_icon)
+        dialog.exec()
 
     def load_history_from_disk(self):
         if os.path.exists(HISTORY_FILE):

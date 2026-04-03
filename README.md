@@ -174,4 +174,4 @@ v3.4 is a more mature version than the previous releases, especially in:
 
 If you use local AI backends every day from the desktop, this version is aimed at being more reliable, more readable, and more comfortable in real use, not just in demos.
 
-For version history, see [CHANGELOG.md](E:\AI_Assistant.claude\CHANGELOG.md).
+For version history, see [CHANGELOG.md](CHANGELOG.md).

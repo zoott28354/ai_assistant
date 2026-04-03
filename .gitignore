@@ -4,6 +4,7 @@ env/
 .env
 
 # File di dati privati
+config.json
 history_db.json
 chat_history.db
 

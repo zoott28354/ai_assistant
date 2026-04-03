@@ -54,7 +54,7 @@ The idea is simple: keep an assistant in the system tray that is always ready to
   Choose backend and model directly from the tray menu.
 
 - ⚙️ `Persistent Backend Configuration`
-  Backend URLs and interface language are saved locally in `config.json`.
+  Backend URLs and interface language are saved locally in the app configuration file.
 
 - 🖼️ `Image Support`
   Image-based requests are handled by compatible multimodal backends.
@@ -83,7 +83,7 @@ The app is designed for local or self-hosted backends that expose models already
 - Llama-Swap
 - Generic OpenAI-compatible endpoints such as `vLLM` or `LocalAI`
 
-Example values in [`config.example.json`](config.example.json):
+- Default backend URLs:
 
 - `Ollama`: `http://localhost:11434`
 - `LM Studio`: `http://localhost:1234/v1`
@@ -134,7 +134,6 @@ python -m venv venv
 AI Assistant stores its data locally on your machine.
 
 - `config.json`: backend URLs and interface language
-- `config.example.json`: example source configuration for developers cloning the repository
 - `chat_history.db`: persistent SQLite chat history, including image-based analysis sessions
 
 With a normal installation, user data is stored in `%AppData%\AI Assistant`.

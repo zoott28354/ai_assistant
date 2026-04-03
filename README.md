@@ -83,7 +83,7 @@ The app is designed for local or self-hosted backends that expose models already
 - Llama-Swap
 - Generic OpenAI-compatible endpoints such as `vLLM` or `LocalAI`
 
-Default values in [config.json](E:\AI_Assistant.claude\config.json):
+Default values in [`config.json`](config.json):
 
 - `Ollama`: `http://localhost:11434`
 - `LM Studio`: `http://localhost:1234/v1`
@@ -114,9 +114,11 @@ Python is not required: the setup already includes the runtime needed to launch 
 This section is only for people who want to clone the repository and run the project manually.
 
 1. Clone or download the repository.
-2. Run [setup.bat](E:\AI_Assistant.claude\setup.bat).
+2. Run [`setup.bat`](setup.bat).
 3. Wait for the virtual environment and dependencies to be installed.
 4. Launch the app with `start_ai_assistant.bat`.
+
+The root `setup.bat` is the source setup entry point. Packaging files for the Windows installer are kept in the [`setup/`](setup) folder.
 
 Manual setup:
 
@@ -160,7 +162,7 @@ Created and maintained by `zoott28354`.
 ## 📄 License
 
 This project is released under the MIT license.
-See [LICENSE](E:\AI_Assistant.claude\LICENSE) for the full text.
+See [`LICENSE`](LICENSE) for the full text.
 
 ## 📈 Project status
 

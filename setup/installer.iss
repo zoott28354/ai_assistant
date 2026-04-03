@@ -32,7 +32,7 @@ VersionInfoVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription=Local desktop AI assistant with screenshots, translations and persistent chat.
 VersionInfoCopyright=Copyright (c) 2026 zoott28354
-ShowLanguageDialog=auto
+ShowLanguageDialog=yes
 UsePreviousLanguage=no
 
 [Languages]

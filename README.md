@@ -12,10 +12,20 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 
 ## 🖼️ Screenshots
 
-<p align="center">
-  <img src="docs/screenshots/tray-menu-v3.4.png" alt="AI Assistant tray menu" width="48%" />
-  <img src="docs/screenshots/Chat.png" alt="AI Assistant chat window" width="48%" />
-</p>
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/screenshots/tray-menu-v3.4.png" alt="AI Assistant tray menu" width="92%" />
+      <br />
+      <sub>Tray menu with backend and model selection</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/screenshots/Chat.png" alt="AI Assistant chat window" width="92%" />
+      <br />
+      <sub>Main chat window with persistent sessions</sub>
+    </td>
+  </tr>
+</table>
 
 ## ✨ Why use it
 

@@ -48,13 +48,16 @@ The idea is simple: keep an assistant in the system tray that is always ready to
   Reads text from the clipboard and sends it directly for translation and analysis.
 
 - 💬 `Persistent Chat`
-  Continue an existing conversation or open a new one without losing context.
+  Continue an existing conversation or open a new one without losing context. Chat messages can also be copied from the right-click context menu.
 
 - 🔌 `Local Multi-Backend Support`
   Choose backend and model directly from the tray menu.
 
 - ⚙️ `Persistent Backend Configuration`
-  Backend URLs and interface language are saved locally in the app configuration file.
+  Backend URLs, interface language, and tray prompt templates are saved locally in the app configuration file.
+
+- ✍️ `Custom Tray Prompts`
+  You can customize the prompt used for `Analyze Copied Text` and `Analyze Area`, while keeping the built-in defaults if you prefer.
 
 - 🖼️ `Image Support`
   Image-based requests are handled by compatible multimodal backends.
@@ -72,6 +75,7 @@ The idea is simple: keep an assistant in the system tray that is always ready to
    - open backend configuration
    - open the multilingual `About` dialog
 5. After a capture or analysis, continue the conversation in chat for follow-up.
+6. In `Configure`, you can optionally customize the prompts used by tray actions.
 
 ## 🤖 Supported backends
 

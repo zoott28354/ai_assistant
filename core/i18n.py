@@ -7,6 +7,9 @@ LANGUAGE_LABELS = {
     "fr": "Francais",
     "de": "Deutsch",
     "pt": "Portugues",
+    "ru": "Русский",
+    "ja": "日本語",
+    "zh": "中文（简体）",
 }
 
 I18N = {
@@ -17,14 +20,20 @@ I18N = {
         "fr": f"{APP_NAME} - v{APP_VERSION}",
         "de": f"{APP_NAME} - v{APP_VERSION}",
         "pt": f"{APP_NAME} - v{APP_VERSION}",
+        "ru": f"{APP_NAME} - v{APP_VERSION}",
+        "ja": f"{APP_NAME} - v{APP_VERSION}",
+        "zh": f"{APP_NAME} - v{APP_VERSION}",
     },
     "assistant_local": {
-        "it": "Assistente locale",
-        "en": "Local assistant",
+        "it": "Assistente",
+        "en": "Assistant",
         "es": "Asistente local",
-        "fr": "Assistant local",
-        "de": "Lokaler Assistent",
+        "fr": "Assistant",
+        "de": "Assistent",
         "pt": "Assistente local",
+        "ru": "Ассистент",
+        "ja": "アシスタント",
+        "zh": "助手",
     },
     "assistant_local_caps": {
         "it": "Assistente Locale",
@@ -33,6 +42,9 @@ I18N = {
         "fr": "Assistant Local",
         "de": "Lokaler Assistent",
         "pt": "Assistente Local",
+        "ru": "Локальный ассистент",
+        "ja": "ローカルアシスタント",
+        "zh": "本地助手",
     },
     "app_title": {
         "it": APP_NAME,
@@ -41,6 +53,9 @@ I18N = {
         "fr": APP_NAME,
         "de": APP_NAME,
         "pt": APP_NAME,
+        "ru": APP_NAME,
+        "ja": APP_NAME,
+        "zh": APP_NAME,
     },
     "legacy_brand_caption": {
         "it": "Screenshot, clipboard e analisi visiva in una chat piu pulita.",
@@ -49,6 +64,9 @@ I18N = {
         "fr": "Captures, presse-papiers et analyse visuelle dans un chat plus epure.",
         "de": "Screenshots, Zwischenablage und visuelle Analyse in einem klareren Chat.",
         "pt": "Capturas, area de transferencia e analise visual em um chat mais limpo.",
+        "ru": "Скриншоты, буфер обмена и визуальный анализ в более чистом чате.",
+        "ja": "スクリーンショット、クリップボード、画像解析をより洗練されたチャットで扱えます。",
+        "zh": "在更简洁的聊天界面中使用截图、剪贴板和视觉分析。",
     },
     "new_chat": {
         "it": "+ Nuova chat",
@@ -57,6 +75,9 @@ I18N = {
         "fr": "+ Nouveau chat",
         "de": "+ Neuer Chat",
         "pt": "+ Novo chat",
+        "ru": "+ Новый чат",
+        "ja": "+ 新しいチャット",
+        "zh": "+ 新建聊天",
     },
     "recent_sessions": {
         "it": "Sessioni recenti",
@@ -65,6 +86,9 @@ I18N = {
         "fr": "Sessions recentes",
         "de": "Letzte Chats",
         "pt": "Sessoes recentes",
+        "ru": "Недавние сессии",
+        "ja": "最近のセッション",
+        "zh": "最近会话",
     },
     "chat_local": {
         "it": "Chat locale",
@@ -73,6 +97,9 @@ I18N = {
         "fr": "Chat local",
         "de": "Lokaler Chat",
         "pt": "Chat local",
+        "ru": "Локальный чат",
+        "ja": "ローカルチャット",
+        "zh": "本地聊天",
     },
     "active_conversation": {
         "it": "Conversazione attiva",
@@ -81,6 +108,9 @@ I18N = {
         "fr": "Conversation active",
         "de": "Aktive Unterhaltung",
         "pt": "Conversa ativa",
+        "ru": "Активный разговор",
+        "ja": "アクティブな会話",
+        "zh": "当前对话",
     },
     "workspace_local": {
         "it": "Workspace locale",
@@ -89,6 +119,9 @@ I18N = {
         "fr": "Espace local",
         "de": "Lokaler Bereich",
         "pt": "Espaco local",
+        "ru": "Локальное рабочее пространство",
+        "ja": "ローカルワークスペース",
+        "zh": "本地工作区",
     },
     "chat_subtitle": {
         "it": "Traduci, analizza screenshot e continua la conversazione.",
@@ -97,6 +130,9 @@ I18N = {
         "fr": "Traduisez, analysez des captures et poursuivez la conversation.",
         "de": "Uebersetzen, Screenshots analysieren und das Gespraech fortsetzen.",
         "pt": "Traduza, analise capturas e continue a conversa.",
+        "ru": "Переводите, анализируйте скриншоты и продолжайте разговор.",
+        "ja": "翻訳、スクリーンショット解析、会話の継続を行えます。",
+        "zh": "翻译、分析截图，并继续对话。",
     },
     "chat_subtitle_active": {
         "it": "Chat persistente per screenshot, testo copiato e follow-up rapidi.",
@@ -105,6 +141,9 @@ I18N = {
         "fr": "Chat persistant pour captures, texte copie et suivis rapides.",
         "de": "Persistenter Chat fuer Screenshots, kopierten Text und schnelle Folgefragen.",
         "pt": "Chat persistente para capturas, texto copiado e acompanhamentos rapidos.",
+        "ru": "Постоянный чат для скриншотов, скопированного текста и быстрых продолжений.",
+        "ja": "スクリーンショット、コピーしたテキスト、素早いフォローアップのための永続チャット。",
+        "zh": "用于截图、复制文本和快速追问的持久聊天。",
     },
     "search_chats": {
         "it": "Trova una chat...",
@@ -113,6 +152,9 @@ I18N = {
         "fr": "Rechercher un chat...",
         "de": "Chat suchen...",
         "pt": "Buscar um chat...",
+        "ru": "Найти чат...",
+        "ja": "チャットを検索...",
+        "zh": "搜索聊天...",
     },
     "empty_search": {
         "it": "Nessuna chat trovata per questa ricerca.",
@@ -121,6 +163,9 @@ I18N = {
         "fr": "Aucun chat trouve pour cette recherche.",
         "de": "Kein Chat fuer diese Suche gefunden.",
         "pt": "Nenhum chat encontrado para esta busca.",
+        "ru": "По этому запросу чаты не найдены.",
+        "ja": "この検索に一致するチャットはありません。",
+        "zh": "未找到匹配此搜索的聊天。",
     },
     "empty_chats": {
         "it": "Nessuna chat disponibile.",
@@ -129,6 +174,9 @@ I18N = {
         "fr": "Aucun chat disponible.",
         "de": "Keine Chats verfuegbar.",
         "pt": "Nenhum chat disponivel.",
+        "ru": "Нет доступных чатов.",
+        "ja": "利用可能なチャットはありません。",
+        "zh": "没有可用聊天。",
     },
     "chat_actions": {
         "it": "Azioni chat",
@@ -137,6 +185,9 @@ I18N = {
         "fr": "Actions du chat",
         "de": "Chat-Aktionen",
         "pt": "Acoes do chat",
+        "ru": "Действия чата",
+        "ja": "チャット操作",
+        "zh": "聊天操作",
     },
     "rename": {
         "it": "Rinomina",
@@ -145,6 +196,9 @@ I18N = {
         "fr": "Renommer",
         "de": "Umbenennen",
         "pt": "Renomear",
+        "ru": "Переименовать",
+        "ja": "名前を変更",
+        "zh": "重命名",
     },
     "delete": {
         "it": "Elimina",
@@ -153,6 +207,9 @@ I18N = {
         "fr": "Supprimer",
         "de": "Loeschen",
         "pt": "Excluir",
+        "ru": "Удалить",
+        "ja": "削除",
+        "zh": "删除",
     },
     "copy": {
         "it": "Copia",
@@ -161,6 +218,9 @@ I18N = {
         "fr": "Copier",
         "de": "Kopieren",
         "pt": "Copiar",
+        "ru": "Копировать",
+        "ja": "コピー",
+        "zh": "复制",
     },
     "rename_prompt": {
         "it": "Nuovo nome della chat:",
@@ -169,6 +229,9 @@ I18N = {
         "fr": "Nouveau nom du chat :",
         "de": "Neuer Chat-Name:",
         "pt": "Novo nome do chat:",
+        "ru": "Новое имя чата:",
+        "ja": "新しいチャット名:",
+        "zh": "新的聊天名称：",
     },
     "delete_prompt": {
         "it": 'Eliminare la chat "{label}"?',
@@ -177,14 +240,20 @@ I18N = {
         "fr": 'Supprimer le chat "{label}" ?',
         "de": 'Chat "{label}" loeschen?',
         "pt": 'Excluir o chat "{label}"?',
+        "ru": 'Удалить чат "{label}"?',
+        "ja": 'チャット「{label}」を削除しますか？',
+        "zh": '要删除聊天“{label}”吗？',
     },
     "you": {
-        "it": "Tu",
+        "it": "Io",
         "en": "You",
         "es": "Tu",
         "fr": "Vous",
         "de": "Du",
         "pt": "Voce",
+        "ru": "Вы",
+        "ja": "あなた",
+        "zh": "你",
     },
     "session_fallback": {
         "it": "Sess {index}",
@@ -193,6 +262,9 @@ I18N = {
         "fr": "Chat {index}",
         "de": "Chat {index}",
         "pt": "Chat {index}",
+        "ru": "Чат {index}",
+        "ja": "チャット {index}",
+        "zh": "聊天 {index}",
     },
     "divider_resize": {
         "it": "Trascina per ridimensionare",
@@ -201,6 +273,9 @@ I18N = {
         "fr": "Faites glisser pour redimensionner",
         "de": "Zum Aendern der Groesse ziehen",
         "pt": "Arraste para redimensionar",
+        "ru": "Перетащите, чтобы изменить размер",
+        "ja": "ドラッグしてサイズ変更",
+        "zh": "拖动以调整大小",
     },
     "backend_badge": {
         "it": "Backend: {value}",
@@ -209,6 +284,9 @@ I18N = {
         "fr": "Backend : {value}",
         "de": "Backend: {value}",
         "pt": "Backend: {value}",
+        "ru": "Бэкенд: {value}",
+        "ja": "バックエンド: {value}",
+        "zh": "后端：{value}",
     },
     "model_badge": {
         "it": "Modello: {value}",
@@ -217,6 +295,9 @@ I18N = {
         "fr": "Modele : {value}",
         "de": "Modell: {value}",
         "pt": "Modelo: {value}",
+        "ru": "Модель: {value}",
+        "ja": "モデル: {value}",
+        "zh": "模型：{value}",
     },
     "backend_prefix": {
         "it": "Backend: ",
@@ -241,6 +322,9 @@ I18N = {
         "fr": "non selectionne",
         "de": "nicht ausgewaehlt",
         "pt": "nao selecionado",
+        "ru": "не выбрано",
+        "ja": "未選択",
+        "zh": "未选择",
     },
     "selected_model_label": {
         "it": "il modello selezionato",
@@ -257,6 +341,9 @@ I18N = {
         "fr": "Pret",
         "de": "Bereit",
         "pt": "Pronto",
+        "ru": "Готово",
+        "ja": "準備完了",
+        "zh": "就绪",
     },
     "saved_session": {
         "it": "Sessione salvata",
@@ -273,6 +360,9 @@ I18N = {
         "fr": "Ecrivez un message, demandez une traduction ou poursuivez une analyse...",
         "de": "Schreibe eine Nachricht, bitte um eine Uebersetzung oder setze eine Analyse fort...",
         "pt": "Escreva uma mensagem, peca uma traducao ou continue uma analise...",
+        "ru": "Напишите сообщение, попросите перевод или продолжите анализ...",
+        "ja": "メッセージを書いたり、翻訳を頼んだり、分析を続けたりできます...",
+        "zh": "输入消息、请求翻译，或继续分析...",
     },
     "send": {
         "it": "Invia",
@@ -281,6 +371,9 @@ I18N = {
         "fr": "Envoyer",
         "de": "Senden",
         "pt": "Enviar",
+        "ru": "Отправить",
+        "ja": "送信",
+        "zh": "发送",
     },
     "ready_analysis": {
         "it": "Pronto all'analisi",
@@ -345,6 +438,9 @@ I18N = {
         "fr": "Generation en cours avec {model}...",
         "de": "Erzeugung mit {model} laeuft...",
         "pt": "Gerando com {model}...",
+        "ru": "Генерация с помощью {model}...",
+        "ja": "{model} で生成中...",
+        "zh": "正在使用 {model} 生成...",
     },
     "status_ready_model": {
         "it": "Pronto ({model})",
@@ -353,6 +449,9 @@ I18N = {
         "fr": "Pret ({model})",
         "de": "Bereit ({model})",
         "pt": "Pronto ({model})",
+        "ru": "Готово ({model})",
+        "ja": "準備完了 ({model})",
+        "zh": "就绪（{model}）",
     },
     "config_title": {
         "it": "Configurazione Backend LLM",
@@ -361,6 +460,9 @@ I18N = {
         "fr": "Configuration du backend LLM",
         "de": "LLM-Backend-Konfiguration",
         "pt": "Configuracao do backend LLM",
+        "ru": "Настройка LLM-бэкендов",
+        "ja": "LLM バックエンド設定",
+        "zh": "LLM 后端配置",
     },
     "config_heading": {
         "it": "Backend locali",
@@ -369,6 +471,9 @@ I18N = {
         "fr": "Backends locaux",
         "de": "Lokale Backends",
         "pt": "Backends locais",
+        "ru": "Локальные бэкенды",
+        "ja": "ローカルバックエンド",
+        "zh": "本地后端",
     },
     "config_subtitle": {
         "it": "Configura gli endpoint e testa subito la connessione senza uscire dalla finestra.",
@@ -377,6 +482,9 @@ I18N = {
         "fr": "Configurez les endpoints et testez la connexion immediatement sans quitter la fenetre.",
         "de": "Konfiguriere die Endpunkte und teste die Verbindung sofort, ohne das Fenster zu verlassen.",
         "pt": "Configure os endpoints e teste a conexao imediatamente sem sair da janela.",
+        "ru": "Настройте эндпоинты и сразу проверьте соединение, не закрывая окно.",
+        "ja": "ウィンドウを閉じずにエンドポイントを設定し、接続をすぐにテストできます。",
+        "zh": "无需离开窗口即可配置端点并立即测试连接。",
     },
     "config_notes": {
         "it": "La quinta voce serve per endpoint OpenAI-compatible generici, ad esempio vLLM o LocalAI. Ha senso se vuoi collegare altri server locali o self-hosted oltre a quelli gia configurati.",
@@ -385,6 +493,9 @@ I18N = {
         "fr": "La cinquieme entree sert aux endpoints generiques compatibles OpenAI, comme vLLM ou LocalAI. Elle est utile si vous voulez connecter d'autres serveurs locaux ou auto-heberges au-dela de ceux deja preconfigures.",
         "de": "Der fuenfte Eintrag ist fuer generische OpenAI-kompatible Endpunkte wie vLLM oder LocalAI gedacht. Er ist nuetzlich, wenn du weitere lokale oder selbst gehostete Server neben den vorkonfigurierten verbinden moechtest.",
         "pt": "A quinta entrada serve para endpoints genericos compativeis com OpenAI, como vLLM ou LocalAI. Ela e util se voce quiser conectar outros servidores locais ou auto-hospedados alem dos preconfigurados.",
+        "ru": "Пятое поле предназначено для общих OpenAI-совместимых эндпоинтов, таких как vLLM или LocalAI. Оно полезно, если вы хотите подключить другие локальные или self-hosted серверы помимо преднастроенных.",
+        "ja": "5番目の項目は、vLLM や LocalAI のような汎用 OpenAI 互換エンドポイント用です。既定のもの以外にローカルまたはセルフホストのサーバーを接続したいときに便利です。",
+        "zh": "第五项用于通用的 OpenAI 兼容端点，例如 vLLM 或 LocalAI。如果你想连接预配置之外的其他本地或自托管服务器，它会很有用。",
     },
     "config_custom_prompts": {
         "it": "Prompt personalizzati",
@@ -393,6 +504,9 @@ I18N = {
         "fr": "Prompts personnalises",
         "de": "Benutzerdefinierte Prompts",
         "pt": "Prompts personalizados",
+        "ru": "Пользовательские промпты",
+        "ja": "カスタムプロンプト",
+        "zh": "自定义提示词",
     },
     "config_copied_text_prompt": {
         "it": "Prompt testo copiato",
@@ -401,6 +515,9 @@ I18N = {
         "fr": "Prompt texte copie",
         "de": "Prompt fuer kopierten Text",
         "pt": "Prompt de texto copiado",
+        "ru": "Промпт для скопированного текста",
+        "ja": "コピーしたテキスト用プロンプト",
+        "zh": "复制文本提示词",
     },
     "config_image_prompt": {
         "it": "Prompt analisi immagine",
@@ -409,6 +526,9 @@ I18N = {
         "fr": "Prompt d'analyse d'image",
         "de": "Prompt fuer Bildanalyse",
         "pt": "Prompt de analise de imagem",
+        "ru": "Промпт для анализа изображения",
+        "ja": "画像解析プロンプト",
+        "zh": "图像分析提示词",
     },
     "config_prompt_help": {
         "it": "Puoi personalizzare i prompt usati dalle azioni della tray. Nel prompt del testo copiato puoi usare il placeholder {text}. Lascia vuoto per usare il default della lingua corrente.",
@@ -425,6 +545,9 @@ I18N = {
         "fr": "Langue de l'interface",
         "de": "Sprache der Oberflaeche",
         "pt": "Idioma da interface",
+        "ru": "Язык интерфейса",
+        "ja": "インターフェース言語",
+        "zh": "界面语言",
     },
     "test": {
         "it": "Test",
@@ -433,6 +556,9 @@ I18N = {
         "fr": "Tester",
         "de": "Testen",
         "pt": "Testar",
+        "ru": "Проверить",
+        "ja": "テスト",
+        "zh": "测试",
     },
     "ok": {
         "it": "OK",
@@ -441,6 +567,9 @@ I18N = {
         "fr": "OK",
         "de": "OK",
         "pt": "OK",
+        "ru": "OK",
+        "ja": "OK",
+        "zh": "确定",
     },
     "cancel": {
         "it": "Annulla",
@@ -449,6 +578,9 @@ I18N = {
         "fr": "Annuler",
         "de": "Abbrechen",
         "pt": "Cancelar",
+        "ru": "Отмена",
+        "ja": "キャンセル",
+        "zh": "取消",
     },
     "tray_analyze_area": {
         "it": "📸 Analizza Area (Rettangolo)",
@@ -457,6 +589,9 @@ I18N = {
         "fr": "📸 Analyser une zone (Rectangle)",
         "de": "📸 Bereich analysieren (Rechteck)",
         "pt": "📸 Analisar area (Retangulo)",
+        "ru": "📸 Анализ области (прямоугольник)",
+        "ja": "📸 範囲を解析（矩形）",
+        "zh": "📸 分析区域（矩形）",
     },
     "tray_analyze_clipboard": {
         "it": "📋 Analizza Testo Copiato",
@@ -465,6 +600,9 @@ I18N = {
         "fr": "📋 Analyser le texte copie",
         "de": "📋 Kopierten Text analysieren",
         "pt": "📋 Analisar texto copiado",
+        "ru": "📋 Анализ скопированного текста",
+        "ja": "📋 コピーしたテキストを解析",
+        "zh": "📋 分析复制的文本",
     },
     "tray_open_chat": {
         "it": "💬 Apri Chat",
@@ -473,6 +611,9 @@ I18N = {
         "fr": "💬 Ouvrir le chat",
         "de": "💬 Chat oeffnen",
         "pt": "💬 Abrir chat",
+        "ru": "💬 Открыть чат",
+        "ja": "💬 チャットを開く",
+        "zh": "💬 打开聊天",
     },
     "tray_config_backend": {
         "it": "⚙️ Configura",
@@ -481,6 +622,9 @@ I18N = {
         "fr": "⚙️ Configurer",
         "de": "⚙️ Konfigurieren",
         "pt": "⚙️ Configurar",
+        "ru": "⚙️ Настроить",
+        "ja": "⚙️ 設定",
+        "zh": "⚙️ 配置",
     },
     "tray_about": {
         "it": "ℹ️ About",
@@ -489,6 +633,9 @@ I18N = {
         "fr": "ℹ️ A propos",
         "de": "ℹ️ Info",
         "pt": "ℹ️ Sobre",
+        "ru": "ℹ️ О программе",
+        "ja": "ℹ️ バージョン情報",
+        "zh": "ℹ️ 关于",
     },
     "tray_engine": {
         "it": "⚙️ Motore AI",
@@ -497,6 +644,9 @@ I18N = {
         "fr": "⚙️ Moteur IA",
         "de": "⚙️ KI-Engine",
         "pt": "⚙️ Motor de IA",
+        "ru": "⚙️ ИИ-движок",
+        "ja": "⚙️ AI エンジン",
+        "zh": "⚙️ AI 引擎",
     },
     "tray_models": {
         "it": "🤖 Modelli",
@@ -505,6 +655,9 @@ I18N = {
         "fr": "🤖 Modeles",
         "de": "🤖 Modelle",
         "pt": "🤖 Modelos",
+        "ru": "🤖 Модели",
+        "ja": "🤖 モデル",
+        "zh": "🤖 模型",
     },
     "tray_exit": {
         "it": "❌ Esci",
@@ -513,6 +666,9 @@ I18N = {
         "fr": "❌ Quitter",
         "de": "❌ Beenden",
         "pt": "❌ Sair",
+        "ru": "❌ Выход",
+        "ja": "❌ 終了",
+        "zh": "❌ 退出",
     },
     "offline": {
         "it": "Offline",
@@ -521,6 +677,9 @@ I18N = {
         "fr": "Hors ligne",
         "de": "Offline",
         "pt": "Offline",
+        "ru": "Не в сети",
+        "ja": "オフライン",
+        "zh": "离线",
     },
     "url_not_configured": {
         "it": "URL non configurato",
@@ -529,6 +688,9 @@ I18N = {
         "fr": "URL non configuree",
         "de": "URL nicht konfiguriert",
         "pt": "URL nao configurada",
+        "ru": "URL не настроен",
+        "ja": "URL が設定されていません",
+        "zh": "URL 未配置",
     },
     "timeout": {
         "it": "Timeout",
@@ -537,6 +699,9 @@ I18N = {
         "fr": "Delai depasse",
         "de": "Zeitueberschreitung",
         "pt": "Tempo esgotado",
+        "ru": "Тайм-аут",
+        "ja": "タイムアウト",
+        "zh": "超时",
     },
     "invalid_response": {
         "it": "Risposta non valida",
@@ -545,6 +710,9 @@ I18N = {
         "fr": "Reponse invalide",
         "de": "Ungueltige Antwort",
         "pt": "Resposta invalida",
+        "ru": "Недопустимый ответ",
+        "ja": "無効な応答",
+        "zh": "无效响应",
     },
     "connection_failed": {
         "it": "Connessione fallita",
@@ -553,6 +721,9 @@ I18N = {
         "fr": "Connexion echouee",
         "de": "Verbindung fehlgeschlagen",
         "pt": "Falha na conexao",
+        "ru": "Ошибка подключения",
+        "ja": "接続に失敗しました",
+        "zh": "连接失败",
     },
     "models_found": {
         "it": "{count} modelli trovati",
@@ -561,6 +732,9 @@ I18N = {
         "fr": "{count} modeles trouves",
         "de": "{count} Modelle gefunden",
         "pt": "{count} modelos encontrados",
+        "ru": "Найдено моделей: {count}",
+        "ja": "{count} 個のモデルが見つかりました",
+        "zh": "找到 {count} 个模型",
     },
     "connected_no_models": {
         "it": "Connesso, nessun modello rilevato",
@@ -569,6 +743,9 @@ I18N = {
         "fr": "Connecte, aucun modele detecte",
         "de": "Verbunden, keine Modelle erkannt",
         "pt": "Conectado, nenhum modelo detectado",
+        "ru": "Подключено, модели не обнаружены",
+        "ja": "接続済み、モデルは検出されませんでした",
+        "zh": "已连接，但未检测到模型",
     },
     "clear_history_title": {
         "it": "Conferma",
@@ -577,6 +754,9 @@ I18N = {
         "fr": "Confirmer",
         "de": "Bestaetigen",
         "pt": "Confirmar",
+        "ru": "Подтвердите",
+        "ja": "確認",
+        "zh": "确认",
     },
     "clear_history_body": {
         "it": "Cancellare tutta la cronologia?",
@@ -585,6 +765,9 @@ I18N = {
         "fr": "Supprimer tout l'historique ?",
         "de": "Den gesamten Verlauf loeschen?",
         "pt": "Excluir todo o historico?",
+        "ru": "Удалить всю историю?",
+        "ja": "履歴をすべて削除しますか？",
+        "zh": "要删除全部历史记录吗？",
     },
     "analyze_copied_prompt": {
         "it": "Prima traduci questo testo in italiano, poi analizzalo e spiegalo:\n\n{text}",
@@ -593,6 +776,9 @@ I18N = {
         "fr": "Traduis d'abord ce texte en francais, puis analyse-le et explique-le :\n\n{text}",
         "de": "Uebersetze diesen Text zuerst ins Deutsche, dann analysiere und erklaere ihn:\n\n{text}",
         "pt": "Primeiro traduza este texto para portugues, depois analise-o e explique-o:\n\n{text}",
+        "ru": "Сначала переведи этот текст на русский, затем проанализируй и объясни его:\n\n{text}",
+        "ja": "まずこのテキストを日本語に翻訳し、その後で分析して説明してください:\n\n{text}",
+        "zh": "请先将这段文字翻译成中文，然后再进行分析和解释：\n\n{text}",
     },
     "analyze_image_prompt": {
         "it": "Analizza questa immagine. Se vedi testo, prima traducilo in italiano. Poi spiega errori o codice. Rispondi in italiano.",
@@ -601,6 +787,9 @@ I18N = {
         "fr": "Analyse cette image. Si tu vois du texte, traduis-le d'abord en francais. Ensuite explique les erreurs ou le code. Reponds en francais.",
         "de": "Analysiere dieses Bild. Wenn du Text siehst, uebersetze ihn zuerst ins Deutsche. Erklaere dann Fehler oder Code. Antworte auf Deutsch.",
         "pt": "Analise esta imagem. Se houver texto, traduza-o primeiro para portugues. Depois explique erros ou codigo. Responda em portugues.",
+        "ru": "Проанализируй это изображение. Если увидишь текст, сначала переведи его на русский. Затем объясни ошибки или код. Отвечай на русском.",
+        "ja": "この画像を解析してください。文字が見える場合は、まず日本語に翻訳してください。その後、エラーやコードを説明してください。日本語で回答してください。",
+        "zh": "请分析这张图片。如果看到文字，请先翻译成中文。然后解释错误或代码。请用中文回答。",
     },
     "image_analysis_label": {
         "it": "Analisi Immagine",
@@ -609,6 +798,9 @@ I18N = {
         "fr": "Analyse d'image",
         "de": "Bildanalyse",
         "pt": "Analise de imagem",
+        "ru": "Анализ изображения",
+        "ja": "画像解析",
+        "zh": "图像分析",
     },
     "new_chat_label": {
         "it": "Nuova chat ({timestamp})",
@@ -617,6 +809,9 @@ I18N = {
         "fr": "Nouveau chat ({timestamp})",
         "de": "Neuer Chat ({timestamp})",
         "pt": "Novo chat ({timestamp})",
+        "ru": "Новый чат ({timestamp})",
+        "ja": "新しいチャット ({timestamp})",
+        "zh": "新聊天（{timestamp}）",
     },
     "error_backend": {
         "it": "Errore [{backend}]: {message}",
@@ -625,6 +820,9 @@ I18N = {
         "fr": "Erreur [{backend}] : {message}",
         "de": "Fehler [{backend}]: {message}",
         "pt": "Erro [{backend}]: {message}",
+        "ru": "Ошибка [{backend}]: {message}",
+        "ja": "エラー [{backend}]: {message}",
+        "zh": "错误 [{backend}]：{message}",
     },
     "config_saved_success": {
         "it": "Configurazione salvata con successo!",
@@ -633,6 +831,9 @@ I18N = {
         "fr": "Configuration enregistree avec succes.",
         "de": "Konfiguration erfolgreich gespeichert.",
         "pt": "Configuracao salva com sucesso.",
+        "ru": "Конфигурация успешно сохранена!",
+        "ja": "設定を保存しました。",
+        "zh": "配置已成功保存！",
     },
     "about_title": {
         "it": "About",
@@ -641,6 +842,9 @@ I18N = {
         "fr": "A propos",
         "de": "Info",
         "pt": "Sobre",
+        "ru": "О программе",
+        "ja": "バージョン情報",
+        "zh": "关于",
     },
     "about_description": {
         "it": "Assistente AI desktop locale per screenshot, traduzioni, analisi immagini e chat persistente.",
@@ -649,6 +853,9 @@ I18N = {
         "fr": "Assistant IA de bureau local pour captures, traductions, analyse d'images et chat persistant.",
         "de": "Lokaler Desktop-KI-Assistent fuer Screenshots, Uebersetzungen, Bildanalyse und persistenten Chat.",
         "pt": "Assistente de IA local para desktop com capturas, traducoes, analise de imagens e chat persistente.",
+        "ru": "Локальный настольный ИИ-помощник для скриншотов, переводов, анализа изображений и постоянного чата.",
+        "ja": "スクリーンショット、翻訳、画像解析、履歴保持チャットのためのローカルデスクトップ AI アシスタントです。",
+        "zh": "本地桌面 AI 助手，支持截图、翻译、图像分析和持久聊天。",
     },
     "about_version": {
         "it": "Versione {version}",
@@ -657,6 +864,9 @@ I18N = {
         "fr": "Version {version}",
         "de": "Version {version}",
         "pt": "Versao {version}",
+        "ru": "Версия {version}",
+        "ja": "バージョン {version}",
+        "zh": "版本 {version}",
     },
     "about_author": {
         "it": "Autore: {author}",
@@ -665,6 +875,9 @@ I18N = {
         "fr": "Auteur : {author}",
         "de": "Autor: {author}",
         "pt": "Autor: {author}",
+        "ru": "Автор: {author}",
+        "ja": "作者: {author}",
+        "zh": "作者：{author}",
     },
     "about_license": {
         "it": "Licenza: {license_name}",
@@ -673,6 +886,9 @@ I18N = {
         "fr": "Licence : {license_name}",
         "de": "Lizenz: {license_name}",
         "pt": "Licenca: {license_name}",
+        "ru": "Лицензия: {license_name}",
+        "ja": "ライセンス: {license_name}",
+        "zh": "许可证：{license_name}",
     },
     "about_github": {
         "it": "GitHub",
@@ -681,6 +897,9 @@ I18N = {
         "fr": "GitHub",
         "de": "GitHub",
         "pt": "GitHub",
+        "ru": "GitHub",
+        "ja": "GitHub",
+        "zh": "GitHub",
     },
     "error": {
         "it": "Errore",
@@ -689,6 +908,9 @@ I18N = {
         "fr": "Erreur",
         "de": "Fehler",
         "pt": "Erro",
+        "ru": "Ошибка",
+        "ja": "エラー",
+        "zh": "错误",
     },
     "save_error": {
         "it": "Errore nel salvataggio: {message}",
@@ -697,6 +919,9 @@ I18N = {
         "fr": "Erreur d'enregistrement : {message}",
         "de": "Speicherfehler: {message}",
         "pt": "Erro ao salvar: {message}",
+        "ru": "Ошибка сохранения: {message}",
+        "ja": "保存エラー: {message}",
+        "zh": "保存错误：{message}",
     },
 }
 

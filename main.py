@@ -358,7 +358,7 @@ class MessageWidget(QWidget):
         lbl_role.setStyleSheet(f"""
             color: {meta_color};
             font-weight: 700;
-            font-size: 11px;
+            font-size: 12px;
             letter-spacing: 0.5px;
             text-transform: uppercase;
         """)
@@ -861,8 +861,8 @@ class CodexWebChatWindow(QWidget):
       --muted: #8c9bad;
       --text: #e8eef5;
       --text-soft: #cad5e2;
-      --assistant-line: #232c38;
-      --user-line: #355c8e;
+      --assistant-line: #63b3ff;
+      --user-line: #ea5a5a;
       --code-bg: #0d1218;
       --composer-border: #273241;
       --button: #3f86e8;
@@ -1197,11 +1197,13 @@ class CodexWebChatWindow(QWidget):
       gap: 10px;
       margin-bottom: 10px;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.9px;
       text-transform: uppercase;
     }
+    .message-meta span { color: #a9d0ff; }
+    .message.user .message-meta span { color: #ff9f9f; }
     .message-line { height: 1px; flex: 1; min-width: 24px; background: var(--assistant-line); }
     .message.user .message-line { background: var(--user-line); }
     .message-body { color: var(--text-soft); font-size: 15px; line-height: 1.68; overflow-wrap: anywhere; }

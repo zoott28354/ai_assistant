@@ -4,7 +4,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0f172a.svg)](https://github.com/zoott28354/ai_assistant)
 [![License](https://img.shields.io/badge/license-MIT-16a34a.svg)](https://github.com/zoott28354/ai_assistant/blob/main/LICENSE)
 [![Local First](https://img.shields.io/badge/local--first-yes-7c3aed.svg)](https://github.com/zoott28354/ai_assistant)
-[![UI Languages](https://img.shields.io/badge/UI%20languages-6-f59e0b.svg)](https://github.com/zoott28354/ai_assistant)
+[![UI Languages](https://img.shields.io/badge/UI%20languages-9-f59e0b.svg)](https://github.com/zoott28354/ai_assistant)
 
 AI Assistant is a local desktop companion for Windows built for real day-to-day use: capture part of the screen, read copied text, send prompts or images to your local models, and keep a persistent conversation history ready for follow-up.
 
@@ -36,7 +36,7 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 - 🖥️ Updated v3.4 UI: improved webview-based chat, better sidebar, multilingual interface, and cleaner internal architecture.
 - 📚 The sidebar supports search, rename, delete, and quick session access.
 - 📸 `Analyze Area` uses the native Windows snipping flow for better practical results, including HDR-friendly capture behavior.
-- 🌍 The interface is available in Italian, English, Spanish, French, German, and Portuguese.
+- 🌍 The interface is available in Italian, English, Spanish, French, German, Portuguese, Russian, Japanese, and Simplified Chinese.
 - ℹ️ The tray includes a multilingual `About` dialog, and the installer is multilingual too.
 
 ## 🛠️ Main features

@@ -22,6 +22,19 @@ class TrayController:
         self.native_snip_last_hash = None
         self.snipper = None
 
+    def get_prompt_text(self, key, **kwargs):
+        prompt_config = self.owner.backend_urls.get("prompts", {}) if isinstance(self.owner.backend_urls, dict) else {}
+        custom_prompt = (prompt_config.get(key, "") or "").strip()
+        if custom_prompt:
+            if key == "copied_text":
+                if "{text}" in custom_prompt:
+                    return custom_prompt.format(**kwargs)
+                text = kwargs.get("text", "")
+                return f"{custom_prompt}\n\n{text}" if text else custom_prompt
+            return custom_prompt.format(**kwargs) if kwargs else custom_prompt
+        fallback_key = "analyze_copied_prompt" if key == "copied_text" else "analyze_image_prompt"
+        return tr(fallback_key, self.owner.language, **kwargs)
+
     def refresh_models(self):
         models, selected_model = fetch_backend_models(
             self.owner.active_backend,
@@ -108,7 +121,7 @@ class TrayController:
         time.sleep(0.4)
         text = copy_selection_and_get_text(0.3)
         if text.strip():
-            self.process(tr("analyze_copied_prompt", self.owner.language, text=text), True)
+            self.process(self.get_prompt_text("copied_text", text=text), True)
 
     def process(self, data, is_txt):
         idx = len(self.owner.sessions)
@@ -116,7 +129,7 @@ class TrayController:
             history = [{"role": "user", "content": data}]
             label = data[:30] + "..." if len(data) > 30 else data
         else:
-            prompt = tr("analyze_image_prompt", self.owner.language)
+            prompt = self.get_prompt_text("image_analysis")
             history = [{"role": "user", "content": prompt, "images": [data]}]
             label = tr("image_analysis_label", self.owner.language)
 

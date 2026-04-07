@@ -19,6 +19,10 @@ DEFAULT_CONFIG = {
         "Llama-Swap": "http://localhost:8080/v1",
         "Compatibile OpenAI": "",
     },
+    "prompts": {
+        "copied_text": "",
+        "image_analysis": "",
+    },
 }
 
 
@@ -94,12 +98,14 @@ def load_runtime_config(config_path=CONFIG_FILE):
                 return {
                     "language": data.get("language", DEFAULT_CONFIG["language"]),
                     "backends": {**DEFAULT_CONFIG["backends"], **data.get("backends", {})},
+                    "prompts": {**DEFAULT_CONFIG["prompts"], **data.get("prompts", {})},
                 }
         except Exception:
             pass
     return {
         "language": DEFAULT_CONFIG["language"],
         "backends": DEFAULT_CONFIG["backends"].copy(),
+        "prompts": DEFAULT_CONFIG["prompts"].copy(),
     }
 
 

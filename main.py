@@ -37,7 +37,7 @@ os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTextBrowser, 
                              QLineEdit, QPushButton, QLabel, QSystemTrayIcon, 
                              QStyle, QMessageBox, QListWidget, QListWidgetItem, 
-                             QScrollArea, QFrame, QSizePolicy, QAbstractItemView, QDialog, 
+                             QScrollArea, QFrame, QSizePolicy, QAbstractItemView, QDialog, QMenu,
                              QSplitter)
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QObject, QSize, QTimer
 from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor
@@ -698,8 +698,8 @@ class OllamaChatWindow(QWidget):
             self.add_message_bubble("user", txt)
             self.input_field.clear()
             self.update_context_header(self.model, self.backend)
-            self.ask_ai()
             self.history_updated.emit(self.idx, self.history)
+            self.ask_ai()
 
     def ask_ai(self):
         self.status_label.setText(tr("status_generating", self.language, model=self.model))
@@ -779,7 +779,8 @@ class CodexWebChatWindow(QWidget):
         main_layout.setSpacing(0)
 
         self.web_view = QWebEngineView()
-        self.web_view.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+        self.web_view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.web_view.customContextMenuRequested.connect(self.show_web_context_menu)
         self.web_view.setStyleSheet("background-color: #15191f; border: none;")
         self.web_view.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
         self.web_view.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, False)
@@ -801,6 +802,19 @@ class CodexWebChatWindow(QWidget):
         self.web_bridge.ready.connect(self.on_web_ready)
         self.web_view.loadFinished.connect(self.on_web_load_finished)
         self.web_view.setHtml(self.build_chat_html())
+
+    def show_web_context_menu(self, position):
+        copy_action = self.web_view.pageAction(self.web_view.page().WebAction.Copy)
+        if copy_action is None:
+            return
+        if not self.web_view.page().selectedText().strip():
+            return
+
+        menu = QMenu(self)
+        menu.setStyleSheet(STYLE_SHEET)
+        copy_action.setText(tr("copy", self.language))
+        menu.addAction(copy_action)
+        menu.exec(self.web_view.mapToGlobal(position))
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -1620,8 +1634,8 @@ class CodexWebChatWindow(QWidget):
                 return
         self.history.append({'role': 'user', 'content': txt})
         self.render_web_state(force_scroll=True)
-        self.ask_ai()
         self.history_updated.emit(self.idx, self.history)
+        self.ask_ai()
 
     def ask_ai(self):
         request_idx = self.idx

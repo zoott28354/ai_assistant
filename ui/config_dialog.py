@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
     QGridLayout,
     QLabel,
     QLineEdit,
+    QPlainTextEdit,
     QPushButton,
     QVBoxLayout,
 )
@@ -23,7 +24,7 @@ class ConfigDialog(QDialog):
         self.language = language
         self.backend_names = backend_names
         self.setWindowTitle(tr("config_title", self.language))
-        self.resize(760, 420)
+        self.resize(760, 640)
         self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.WindowTitleHint | Qt.WindowType.WindowSystemMenuHint | Qt.WindowType.WindowCloseButtonHint)
         self.setStyleSheet("""
             QDialog {
@@ -86,6 +87,18 @@ class ConfigDialog(QDialog):
                 border: 1px solid #2d3948;
                 selection-background-color: #2d6eb2;
             }
+            QPlainTextEdit {
+                min-height: 92px;
+                background-color: #202732;
+                color: #eef4fb;
+                border: 1px solid #2d3948;
+                border-radius: 10px;
+                padding: 10px 12px;
+                selection-background-color: #2d6eb2;
+            }
+            QPlainTextEdit:focus {
+                border: 1px solid #4f83b8;
+            }
             QPushButton {
                 min-height: 38px;
                 padding: 0 16px;
@@ -135,8 +148,10 @@ class ConfigDialog(QDialog):
         self.inputs = {}
         self.status_labels = {}
         self.language_combo = None
+        self.prompt_inputs = {}
         backends = current_config.get("backends", {})
         current_language = current_config.get("language", language)
+        prompts = current_config.get("prompts", DEFAULT_CONFIG.get("prompts", {}))
 
         row = 0
         language_title = QLabel(tr("config_language", self.language))
@@ -185,6 +200,28 @@ class ConfigDialog(QDialog):
         notes.setObjectName("dialog_subtitle")
         layout.addWidget(notes)
 
+        prompt_title = QLabel(tr("config_custom_prompts", self.language))
+        prompt_title.setProperty("role", "backend_name")
+        layout.addWidget(prompt_title)
+
+        copied_prompt_label = QLabel(tr("config_copied_text_prompt", self.language))
+        copied_prompt_label.setProperty("role", "backend_name")
+        copied_prompt_edit = QPlainTextEdit()
+        copied_prompt_edit.setPlainText(prompts.get("copied_text", ""))
+        copied_prompt_edit.setPlaceholderText(tr("analyze_copied_prompt", current_language, text="{text}"))
+        self.prompt_inputs["copied_text"] = copied_prompt_edit
+        layout.addWidget(copied_prompt_label)
+        layout.addWidget(copied_prompt_edit)
+
+        image_prompt_label = QLabel(tr("config_image_prompt", self.language))
+        image_prompt_label.setProperty("role", "backend_name")
+        image_prompt_edit = QPlainTextEdit()
+        image_prompt_edit.setPlainText(prompts.get("image_analysis", ""))
+        image_prompt_edit.setPlaceholderText(tr("analyze_image_prompt", current_language))
+        self.prompt_inputs["image_analysis"] = image_prompt_edit
+        layout.addWidget(image_prompt_label)
+        layout.addWidget(image_prompt_edit)
+
         layout.addStretch(1)
 
         btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -210,4 +247,5 @@ class ConfigDialog(QDialog):
         return {
             "language": self.language_combo.currentData() if self.language_combo else self.language,
             "backends": {n: e.text().strip() for n, e in self.inputs.items()},
+            "prompts": {n: e.toPlainText().strip() for n, e in self.prompt_inputs.items()},
         }

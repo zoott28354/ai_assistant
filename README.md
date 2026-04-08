@@ -29,7 +29,7 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 
 ## ✨ Why use it
 
-- 🔒 Everything stays local: screenshots, copied text, configuration, and chat history are stored on your machine.
+- 🔒 Everything stays local: screenshots, copied text, configuration, custom tray prompts, and chat history are stored on your machine.
 - 🤖 Multiple local backends are supported: Ollama, LM Studio, Llama.cpp, Llama-Swap, and generic OpenAI-compatible endpoints.
 - ⚡ Fast desktop-first workflow: start from the tray, analyze an area or copied text, then continue in chat.
 - 🧠 Persistent sessions: conversations are stored in SQLite and can be resumed later.
@@ -137,7 +137,7 @@ python -m venv venv
 
 AI Assistant stores its data locally on your machine.
 
-- `config.json`: backend URLs and interface language
+- `config.json`: backend URLs, interface language, and custom tray prompt templates
 - `chat_history.db`: persistent SQLite chat history, including image-based analysis sessions
 
 With a normal installation, user data is stored in `%AppData%\AI Assistant`.

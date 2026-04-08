@@ -15,7 +15,7 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="docs/screenshots/tray-menu-v3.4.png" alt="AI Assistant tray menu" width="92%" />
+      <img src="docs/screenshots/tray-meny-new.png" alt="AI Assistant tray menu" width="92%" />
       <br />
       <sub>Tray menu with backend and model selection</sub>
     </td>

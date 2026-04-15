@@ -176,7 +176,7 @@ class ConfigDialog(QDialog):
 
             edit = QLineEdit(url)
             if "OpenAI" in name:
-                edit.setPlaceholderText("https://host:porta/v1")
+                edit.setPlaceholderText("https://host:port/v1")
             self.inputs[name] = edit
 
             test_button = QPushButton(tr("test", self.language))

@@ -783,6 +783,7 @@ class CodexWebChatWindow(QWidget):
         self.sessions_cache = []
         self.current_session_idx = -1
         self.session_factory = None
+        self.runtime_context_provider = None
         self.active_workers = []
 
         main_layout = QHBoxLayout(self)
@@ -1639,10 +1640,22 @@ class CodexWebChatWindow(QWidget):
         self.current_session_idx = current_idx
         self.render_web_state()
 
+    def sync_runtime_context(self, render=True):
+        if callable(self.runtime_context_provider):
+            model, backend = self.runtime_context_provider()
+            self.model = model
+            self.backend = backend
+            if 0 <= self.idx < len(self.sessions_cache):
+                self.sessions_cache[self.idx]["model"] = model
+                self.sessions_cache[self.idx]["backend"] = backend
+        if render:
+            self.render_web_state()
+
     def load_session(self, idx, hist, model, backend, is_new=False, bring_forward=False):
         self.idx, self.history, self.model, self.backend = idx, hist, model, backend
         self.current_session_idx = idx
         self.is_generating = False
+        self.sync_runtime_context(render=False)
         self.render_web_state(force_scroll=True)
         if bring_forward:
             self.bring_to_front()
@@ -1660,12 +1673,14 @@ class CodexWebChatWindow(QWidget):
                 self.new_chat_requested.emit()
             if self.idx < 0:
                 return
+        self.sync_runtime_context(render=False)
         self.history.append({'role': 'user', 'content': txt})
         self.render_web_state(force_scroll=True)
         self.history_updated.emit(self.idx, self.history)
         self.ask_ai()
 
     def ask_ai(self):
+        self.sync_runtime_context(render=False)
         request_idx = self.idx
         request_model = self.model
         request_backend = self.backend
@@ -1706,6 +1721,7 @@ class MainApp:
         self.active_model = ""
         self.language = "it"
         self.sessions = []
+        self.active_pdf_exports = []
         
         # Load configuration
         self.backend_urls = self.load_config()
@@ -1717,6 +1733,7 @@ class MainApp:
         
         self.chat_window = CodexWebChatWindow(self.backend_urls, self.language)
         self.chat_window.session_factory = self.start_new_session_ui
+        self.chat_window.runtime_context_provider = lambda: (self.active_model, self.active_backend)
         self.chat_window.history_updated.connect(self.save_updated_history)
         self.chat_window.session_selected.connect(self.restore)
         self.chat_window.delete_session_requested.connect(self.delete_session)
@@ -1922,13 +1939,32 @@ class MainApp:
         try:
             if extension == "zip":
                 export_session_to_zip(session, output_path, self.language)
+                QMessageBox.information(
+                    self.chat_window,
+                    tr("export_complete_title", self.language),
+                    tr("export_complete_body", self.language, path=output_path),
+                )
             else:
-                export_session_to_pdf(session, output_path, self.language)
-            QMessageBox.information(
-                self.chat_window,
-                tr("export_complete_title", self.language),
-                tr("export_complete_body", self.language, path=output_path),
-            )
+                job = export_session_to_pdf(session, output_path, self.language)
+                self.active_pdf_exports.append(job)
+
+                def on_pdf_finished(success, message, export_job=job, path=output_path):
+                    if export_job in self.active_pdf_exports:
+                        self.active_pdf_exports.remove(export_job)
+                    if success:
+                        QMessageBox.information(
+                            self.chat_window,
+                            tr("export_complete_title", self.language),
+                            tr("export_complete_body", self.language, path=path),
+                        )
+                    else:
+                        QMessageBox.warning(
+                            self.chat_window,
+                            tr("error", self.language),
+                            tr("export_error", self.language, message=message),
+                        )
+
+                job.finished.connect(on_pdf_finished)
         except Exception as e:
             QMessageBox.warning(
                 self.chat_window,

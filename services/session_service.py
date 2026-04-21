@@ -5,6 +5,26 @@ import re
 import sqlite3
 from datetime import datetime
 
+LABEL_TIMESTAMP_RE = re.compile(r"\s*\(\d{2}/\d{2}\s+\d{2}:\d{2}\)\s*$")
+
+
+def _strip_label_timestamp(label):
+    return LABEL_TIMESTAMP_RE.sub("", label or "").strip()
+
+
+def _is_default_session_label(label):
+    return (
+        label.startswith("Nuova chat (")
+        or label.startswith("New chat (")
+        or label.startswith("Ciao! Come posso aiutarti oggi?")
+    )
+
+
+def _label_with_timestamp(label, timestamp=None):
+    base_label = _strip_label_timestamp(label) or "Chat"
+    stamp = (timestamp or datetime.now()).strftime("%d/%m %H:%M")
+    return f"{base_label} ({stamp})"
+
 
 def load_legacy_history(history_file):
     if not os.path.exists(history_file):
@@ -142,11 +162,13 @@ def persist_session_update(sessions, index, history, active_model, active_backen
             "",
         )
         if first_user_message:
+            now = datetime.now()
             base_label = first_user_message[:30] + "..." if len(first_user_message) > 30 else first_user_message
             current_label = sessions[index].get("label", "")
-            if current_label.startswith("Nuova chat (") or current_label.startswith("New chat (") or current_label.startswith("Ciao! Come posso aiutarti oggi?"):
-                timestamp = datetime.now().strftime("%d/%m %H:%M")
-                sessions[index]["label"] = f"{base_label} ({timestamp})"
+            if _is_default_session_label(current_label):
+                sessions[index]["label"] = _label_with_timestamp(base_label, now)
+            else:
+                sessions[index]["label"] = _label_with_timestamp(current_label, now)
 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -223,9 +245,8 @@ def rename_session(sessions, idx, new_label, db_path):
 
     session = sessions[idx]
     old_label = session.get("label", "")
-    timestamp_match = re.search(r"(\(\d{2}/\d{2}\s+\d{2}:\d{2}\))\s*$", old_label)
-    if timestamp_match and timestamp_match.group(1) not in label:
-        label = f"{label} {timestamp_match.group(1)}"
+    if LABEL_TIMESTAMP_RE.search(old_label):
+        label = _label_with_timestamp(label)
 
     session["label"] = label
     if session.get("id") is not None:

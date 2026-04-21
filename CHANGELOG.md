@@ -2,6 +2,15 @@
 
 All notable changes to AI Assistant are documented here.
 
+## v3.5
+
+- Added per-chat export from the sidebar menu as PDF or ZIP with Markdown and original image assets.
+- Improved PDF export using the WebEngine print pipeline for better layout, images, tables, code blocks, and readable A4 margins.
+- Added right-click copy support inside the chat window.
+- Improved session updates: edited chats move correctly in the sidebar and refresh their visible timestamp.
+- The active tray model/backend now becomes the runtime context when continuing an older chat, so the chat header and exported metadata reflect the latest model used.
+- Clarified documentation around custom tray prompts, local persistence, and backend-managed context limits.
+
 ## v3.4
 
 - Conservative internal refactor from a single-file app toward a clearer modular structure.

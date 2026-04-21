@@ -4,8 +4,10 @@ import re
 import zipfile
 from datetime import datetime
 
-from PyQt6.QtGui import QImage, QTextDocument
-from PyQt6.QtPrintSupport import QPrinter
+import markdown
+from PyQt6.QtCore import QMarginsF, QObject, QUrl, pyqtSignal
+from PyQt6.QtGui import QImage, QPageLayout, QPageSize
+from PyQt6.QtWebEngineCore import QWebEnginePage
 
 from core.i18n import APP_NAME, tr
 
@@ -81,21 +83,13 @@ def export_session_to_zip(session, output_path, language="en"):
     markdown_text, assets = build_markdown(session, language=language)
     export_root = safe_filename(default_export_name(session, "export").removesuffix(".export"), "AI Assistant export")
     markdown_name = default_export_name(session, "md")
-    instructions = (
-        "AI Assistant Obsidian export\n"
-        "============================\n\n"
-        "Extract this whole folder inside your Obsidian vault.\n"
-        "Open the Markdown file from Obsidian.\n"
-        "Do not import only the .md file, otherwise image links will be missing.\n"
-    )
     with zipfile.ZipFile(output_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(f"{export_root}/{markdown_name}", markdown_text.encode("utf-8"))
-        archive.writestr(f"{export_root}/README_IMPORT.txt", instructions.encode("utf-8"))
         for asset_path, data in assets:
             archive.writestr(f"{export_root}/{asset_path}", data)
 
 
-def _pdf_image_width(data, max_width=620):
+def _pdf_image_width(data, max_width=760):
     image = QImage()
     if not image.loadFromData(data):
         return max_width
@@ -109,18 +103,32 @@ def _build_pdf_html(session, language="en"):
     meta = html.escape(" • ".join(part for part in [session.get("backend"), session.get("model")] if part))
     parts = [
         "<html><head><meta charset='utf-8'><style>",
-        "body{font-family:'Segoe UI',Arial,sans-serif;color:#1b2430;font-size:11pt;line-height:1.5;}",
+        "@page{size:A4;margin:10mm 16mm 14mm 16mm;}",
+        "body{font-family:'Segoe UI',Arial,sans-serif;color:#17202b;background:#ffffff;font-size:11pt;line-height:1.52;}",
+        ".page{background:#ffffff;padding:10px 8px;}",
         "h1{font-size:22pt;margin:0 0 6px 0;color:#111827;}",
-        ".meta{color:#667085;margin-bottom:18px;}",
-        ".msg{border-top:2px solid #d0d7e2;padding-top:10px;margin-top:18px;}",
-        ".user{border-color:#e15b5b;}",
-        ".assistant{border-color:#3c92dc;}",
-        ".role{font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;}",
-        ".user .role{color:#b53b3b;}",
-        ".assistant .role{color:#2676b8;}",
-        "pre,code{font-family:Consolas,monospace;background:#f3f5f8;border-radius:4px;padding:2px 4px;}",
-        "img{max-width:100%;height:auto;margin:8px 0 12px 0;border:1px solid #e4e7ec;border-radius:8px;}",
+        ".meta{color:#667085;margin-bottom:18px;font-size:9.5pt;}",
+        ".msg{margin:0 0 16px 0;padding:0;page-break-inside:auto;}",
+        ".role-row{display:table;width:100%;margin-bottom:10px;}",
+        ".role{display:table-cell;width:1%;white-space:nowrap;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:10pt;padding-right:10px;}",
+        ".line{display:table-cell;height:1px;border-top:2px solid #63b3ff;vertical-align:middle;}",
+        ".user .role{color:#ff9f9f;}",
+        ".assistant .role{color:#a9d0ff;}",
+        ".user .line{border-top-color:#ea5a5a;}",
+        ".assistant .line{border-top-color:#63b3ff;}",
+        ".body{color:#243244;font-size:11pt;}",
+        ".user .body{color:#111827;}",
+        ".body p{margin:0 0 10px 0;}",
+        ".body ul,.body ol{margin:8px 0 12px 22px;padding:0;}",
+        ".body li{margin:4px 0;}",
+        ".body blockquote{margin:10px 0;padding:8px 12px;border-left:3px solid #94a3b8;background:#f1f5f9;color:#334155;}",
+        ".body pre{margin:12px 0;padding:12px 14px;border-radius:10px;border:1px solid #d0d7e2;background:#f8fafc;color:#17202b;white-space:pre-wrap;}",
+        ".body code{font-family:Consolas,monospace;background:#eef2f7;color:#164b78;border-radius:5px;padding:2px 5px;}",
+        ".body pre code{background:transparent;color:inherit;padding:0;}",
+        ".image-wrap{margin:4px 0 8px 0;page-break-inside:avoid;}",
+        "img{max-width:100%;height:auto;border:1px solid #d0d7e2;border-radius:8px;background:#f8fafc;}",
         "</style></head><body>",
+        "<div class='page'>",
         f"<h1>{title}</h1>",
         f"<div class='meta'>{html.escape(APP_NAME)}"
         + (f" • {meta}" if meta else "")
@@ -129,25 +137,63 @@ def _build_pdf_html(session, language="en"):
     for message in session.get("history", []):
         role_key = "user" if message.get("role") == "user" else "assistant"
         role = html.escape(_role_label(message.get("role", ""), language))
-        parts.append(f"<section class='msg {role_key}'><div class='role'>{role}</div>")
+        parts.append(
+            f"<section class='msg {role_key}'>"
+            f"<div class='role-row'><span class='role'>{role}</span><span class='line'></span></div>"
+        )
         for image in message.get("images", []) or []:
             data = _image_bytes(image)
             if data:
                 encoded = base64.b64encode(data).decode("ascii")
                 width = _pdf_image_width(data)
-                parts.append(f"<img width='{width}' src='data:image/png;base64,{encoded}' />")
-        content = html.escape(message.get("content") or "").replace("\n", "<br>")
+                parts.append(f"<div class='image-wrap'><img width='{width}' src='data:image/png;base64,{encoded}' /></div>")
+        content = markdown.markdown(
+            message.get("content") or "",
+            extensions=["fenced_code", "tables", "nl2br"],
+            output_format="html5",
+        )
         if content:
-            parts.append(f"<div>{content}</div>")
+            parts.append(f"<div class='body'>{content}</div>")
         parts.append("</section>")
-    parts.append("</body></html>")
+    parts.append("</div></body></html>")
     return "".join(parts)
 
 
+class PdfExportJob(QObject):
+    finished = pyqtSignal(bool, str)
+
+    def __init__(self, session, output_path, language="en", parent=None):
+        super().__init__(parent)
+        self.session = session
+        self.output_path = output_path
+        self.language = language
+        self.page = QWebEnginePage(self)
+        self.page.loadFinished.connect(self._on_load_finished)
+        self.page.pdfPrintingFinished.connect(self._on_pdf_finished)
+
+    def start(self):
+        self.page.setHtml(_build_pdf_html(self.session, self.language), QUrl("about:blank"))
+
+    def _on_load_finished(self, ok):
+        if not ok:
+            self.finished.emit(False, "Unable to render export HTML.")
+            return
+        layout = QPageLayout(
+            QPageSize(QPageSize.PageSizeId.A4),
+            QPageLayout.Orientation.Portrait,
+            QMarginsF(16, 10, 16, 14),
+            QPageLayout.Unit.Millimeter,
+        )
+        self.page.printToPdf(self.output_path, layout)
+
+    def _on_pdf_finished(self, _path, success):
+        if success:
+            self.finished.emit(True, "")
+        else:
+            self.finished.emit(False, "Unable to write PDF file.")
+
+
 def export_session_to_pdf(session, output_path, language="en"):
-    printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-    printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-    printer.setOutputFileName(output_path)
-    document = QTextDocument()
-    document.setHtml(_build_pdf_html(session, language=language))
-    document.print(printer)
+    job = PdfExportJob(session, output_path, language)
+    job.start()
+    return job

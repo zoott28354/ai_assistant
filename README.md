@@ -35,6 +35,7 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 - 🧠 Persistent sessions: conversations are stored in SQLite and can be resumed later.
 - 🖥️ Updated v3.4 UI: improved webview-based chat, better sidebar, multilingual interface, and cleaner internal architecture.
 - 📚 The sidebar supports search, rename, delete, and quick session access.
+- 📤 Single chats can be exported as Obsidian-friendly ZIP archives or as PDF documents.
 - 📸 `Analyze Area` uses the native Windows snipping flow for better practical results, including HDR-friendly capture behavior.
 - 🌍 The interface is available in Italian, English, Spanish, French, German, Portuguese, Russian, Japanese, and Simplified Chinese.
 - ℹ️ The tray includes a multilingual `About` dialog, and the installer is multilingual too.
@@ -49,6 +50,9 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 
 - 💬 `Persistent Chat`
   Continue an existing conversation or open a new one without losing context. Chat messages can also be copied from the right-click context menu.
+
+- 📤 `Chat Export`
+  Export an individual chat from the sidebar menu as a ZIP archive with Markdown and image assets, or as a standalone PDF.
 
 - 🔌 `Local Multi-Backend Support`
   Choose backend and model directly from the tray menu.

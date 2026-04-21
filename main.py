@@ -26,6 +26,11 @@ from services.session_service import (
     persist_session_update,
     rename_session as rename_stored_session,
 )
+from services.export_service import (
+    default_export_name,
+    export_session_to_pdf,
+    export_session_to_zip,
+)
 from ui.about_dialog import AboutDialog
 from ui.config_dialog import ConfigDialog
 from workers.ai_worker import AIWorker
@@ -38,7 +43,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QT
                              QLineEdit, QPushButton, QLabel, QSystemTrayIcon, 
                              QStyle, QMessageBox, QListWidget, QListWidgetItem, 
                              QScrollArea, QFrame, QSizePolicy, QAbstractItemView, QDialog, QMenu,
-                             QSplitter)
+                             QSplitter, QFileDialog)
 from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QObject, QSize, QTimer
 from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor
 from PyQt6.QtWebChannel import QWebChannel
@@ -722,6 +727,7 @@ class WebChatBridge(QObject):
     session_selected = pyqtSignal(int)
     session_delete_requested = pyqtSignal(int)
     session_rename_requested = pyqtSignal(int, str)
+    session_export_requested = pyqtSignal(int, str)
     new_chat_requested = pyqtSignal()
     ready = pyqtSignal()
 
@@ -749,12 +755,17 @@ class WebChatBridge(QObject):
     def renameSession(self, index, label):
         self.session_rename_requested.emit(index, label)
 
+    @pyqtSlot(int, str)
+    def exportSession(self, index, export_format):
+        self.session_export_requested.emit(index, export_format)
+
 
 class CodexWebChatWindow(QWidget):
     history_updated = pyqtSignal(int, list)
     session_selected = pyqtSignal(int)
     delete_session_requested = pyqtSignal(int)
     rename_session_requested = pyqtSignal(int, str)
+    export_session_requested = pyqtSignal(int, str)
     new_chat_requested = pyqtSignal()
 
     def __init__(self, backend_urls, language="it"):
@@ -798,6 +809,7 @@ class CodexWebChatWindow(QWidget):
         self.web_bridge.session_selected.connect(self.session_selected.emit)
         self.web_bridge.session_delete_requested.connect(self.delete_session_requested.emit)
         self.web_bridge.session_rename_requested.connect(self.rename_session_requested.emit)
+        self.web_bridge.session_export_requested.connect(self.export_session_requested.emit)
         self.web_bridge.new_chat_requested.connect(self.new_chat_requested.emit)
         self.web_bridge.ready.connect(self.on_web_ready)
         self.web_view.loadFinished.connect(self.on_web_load_finished)
@@ -843,6 +855,8 @@ class CodexWebChatWindow(QWidget):
             "chatActions": tr("chat_actions", self.language),
             "rename": tr("rename", self.language),
             "delete": tr("delete", self.language),
+            "exportZip": tr("export_zip", self.language),
+            "exportPdf": tr("export_pdf", self.language),
             "renamePrompt": tr("rename_prompt", self.language),
             "deletePrompt": tr("delete_prompt", self.language, label="{label}"),
             "backendPrefix": tr("backend_prefix", self.language),
@@ -1379,6 +1393,8 @@ class CodexWebChatWindow(QWidget):
               <button type="button" class="session-menu-button" title="${UI.chatActions}" aria-label="${UI.chatActions}">⋯</button>
               <div class="session-menu">
                 <button type="button" class="session-menu-item" data-action="rename">${UI.rename}</button>
+                <button type="button" class="session-menu-item" data-action="export_zip">${UI.exportZip}</button>
+                <button type="button" class="session-menu-item" data-action="export_pdf">${UI.exportPdf}</button>
                 <button type="button" class="session-menu-item destructive" data-action="delete">${UI.delete}</button>
               </div>
             </div>
@@ -1400,6 +1416,16 @@ class CodexWebChatWindow(QWidget):
           if (renamed && renamed.trim() && bridge) {
             bridge.renameSession(session.index, renamed.trim());
           }
+        });
+        menu.querySelector('[data-action="export_zip"]').addEventListener("click", (event) => {
+          event.stopPropagation();
+          closeAllSessionMenus();
+          if (bridge) bridge.exportSession(session.index, "zip");
+        });
+        menu.querySelector('[data-action="export_pdf"]').addEventListener("click", (event) => {
+          event.stopPropagation();
+          closeAllSessionMenus();
+          if (bridge) bridge.exportSession(session.index, "pdf");
         });
         menu.querySelector('[data-action="delete"]').addEventListener("click", (event) => {
           event.stopPropagation();
@@ -1695,6 +1721,7 @@ class MainApp:
         self.chat_window.session_selected.connect(self.restore)
         self.chat_window.delete_session_requested.connect(self.delete_session)
         self.chat_window.rename_session_requested.connect(self.rename_session)
+        self.chat_window.export_session_requested.connect(self.export_session)
         self.chat_window.new_chat_requested.connect(self.start_new_session_ui)
         
         # Initial Sidebar Population
@@ -1872,6 +1899,42 @@ class MainApp:
         self.chat_window.update_sidebar(self.sessions, new_idx)
         target = result["session"]
         self.chat_window.load_session(new_idx, target['history'], target['model'], target['backend'], is_new=False, bring_forward=False)
+
+    def export_session(self, idx, export_format):
+        if idx < 0 or idx >= len(self.sessions):
+            return
+
+        session = self.sessions[idx]
+        extension = "zip" if export_format == "zip" else "pdf"
+        default_name = default_export_name(session, extension)
+        file_filter = "ZIP archive (*.zip)" if extension == "zip" else "PDF document (*.pdf)"
+        output_path, _ = QFileDialog.getSaveFileName(
+            self.chat_window,
+            tr("export_dialog_title", self.language),
+            default_name,
+            file_filter,
+        )
+        if not output_path:
+            return
+        if not output_path.lower().endswith(f".{extension}"):
+            output_path = f"{output_path}.{extension}"
+
+        try:
+            if extension == "zip":
+                export_session_to_zip(session, output_path, self.language)
+            else:
+                export_session_to_pdf(session, output_path, self.language)
+            QMessageBox.information(
+                self.chat_window,
+                tr("export_complete_title", self.language),
+                tr("export_complete_body", self.language, path=output_path),
+            )
+        except Exception as e:
+            QMessageBox.warning(
+                self.chat_window,
+                tr("error", self.language),
+                tr("export_error", self.language, message=str(e)),
+            )
 
 
     def refresh_mods(self):

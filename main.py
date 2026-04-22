@@ -1988,6 +1988,8 @@ class MainApp:
             save_runtime_config(config, CONFIG_FILE)
             self.backend_urls = config
             self.language = config.get("language", self.language)
+            if hasattr(self, "chat_window"):
+                self.chat_window.backend_urls = self.backend_urls
             QMessageBox.information(
                 None,
                 tr("config_title", self.language),

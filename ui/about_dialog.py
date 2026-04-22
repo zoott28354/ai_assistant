@@ -53,8 +53,9 @@ class AboutDialog(QDialog):
                 text-decoration: underline;
             }
             QDialogButtonBox QPushButton {
-                min-width: 112px;
+                min-width: 168px;
                 min-height: 38px;
+                padding: 0 18px;
                 background-color: #1c7ed6;
                 color: #ffffff;
                 border: none;
@@ -103,14 +104,16 @@ class AboutDialog(QDialog):
         layout.addWidget(author)
         layout.addWidget(license_label)
         layout.addWidget(github)
+        layout.addSpacing(16)
         layout.addStretch(1)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+        buttons = QDialogButtonBox()
         update_button = buttons.addButton(
             tr("about_check_updates", self.language),
             QDialogButtonBox.ButtonRole.ActionRole,
         )
         update_button.clicked.connect(self.check_updates)
+        ok_button = buttons.addButton(QDialogButtonBox.StandardButton.Ok)
         ok_button = buttons.button(QDialogButtonBox.StandardButton.Ok)
         if ok_button:
             ok_button.setText(tr("ok", self.language))

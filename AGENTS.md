@@ -75,13 +75,13 @@ cmd /c setup\build_installer.bat
 Output installer:
 
 ```text
-installer_output\AI_Assistant_Setup_v3.5.1.exe
+installer_output\AI_Assistant_Setup_v3.5.2.exe
 ```
 
 Aggiornamento asset release GitHub:
 
 ```powershell
-gh release upload v3.5.1 installer_output\AI_Assistant_Setup_v3.5.1.exe --repo zoott28354/ai_assistant --clobber
+gh release upload v3.5.2 installer_output\AI_Assistant_Setup_v3.5.2.exe --repo zoott28354/ai_assistant --clobber
 ```
 
 ## File locali da non committare
@@ -147,14 +147,14 @@ git status -sb
 La release pubblica attuale e:
 
 ```text
-v3.5.1
+v3.5.2
 ```
 
 Quando si cambia codice che finisce nell'installer:
 
 1. commit e push su `main`
 2. build installer con `setup\build_installer.bat`
-3. upload asset release `v3.5.1` con `gh release upload ... --clobber`
+3. upload asset release `v3.5.2` con `gh release upload ... --clobber`
 
 ## Note architetturali
 

@@ -5,6 +5,7 @@ import requests
 import json
 import re
 import markdown
+import hashlib
 from datetime import datetime
 
 from controllers.tray_controller import TrayController
@@ -1453,6 +1454,7 @@ class CodexWebChatWindow(QWidget):
     const UI = __UI_JSON__;
     let bridge = null;
     let latestState = null;
+    let latestMessagesSignature = "";
     let isDraggingDivider = false;
     let sidebarSearchQuery = "";
     let pendingAttachments = [];
@@ -1513,7 +1515,7 @@ class CodexWebChatWindow(QWidget):
     }
     function renderSessions(state) {
       const list = document.getElementById("session-list");
-      list.innerHTML = "";
+      const fragment = document.createDocumentFragment();
       const query = sidebarSearchQuery.trim().toLowerCase();
       const filteredSessions = state.sessions.filter((session) => {
         if (!query) return true;
@@ -1523,7 +1525,7 @@ class CodexWebChatWindow(QWidget):
         const empty = document.createElement("div");
         empty.className = "session-empty";
         empty.textContent = query ? UI.emptySearch : UI.emptyChats;
-        list.appendChild(empty);
+        list.replaceChildren(empty);
         return;
       }
       filteredSessions.forEach((session) => {
@@ -1583,19 +1585,16 @@ class CodexWebChatWindow(QWidget):
           closeAllSessionMenus();
           if (bridge) bridge.openSession(session.index);
         });
-        list.appendChild(item);
+        fragment.appendChild(item);
       });
+      list.replaceChildren(fragment);
     }
-    function renderState(state) {
-      latestState = state;
-      document.getElementById("chat-title").textContent = state.title;
-      document.getElementById("badge-backend").textContent = UI.backendPrefix + state.backend;
-      document.getElementById("badge-model").textContent = UI.modelPrefix + state.model;
-      document.getElementById("status-line").textContent = state.status;
-      renderSessions(state);
-      renderAttachments(state.attachments || []);
+    function renderMessages(state) {
+      const signature = state.messages.map((message) => message.key).join("|");
+      if (signature === latestMessagesSignature) return;
+      latestMessagesSignature = signature;
       const messages = document.getElementById("messages");
-      messages.innerHTML = "";
+      const fragment = document.createDocumentFragment();
       state.messages.forEach((message) => {
         const wrapper = document.createElement("article");
         wrapper.className = "message " + message.role;
@@ -1630,8 +1629,19 @@ class CodexWebChatWindow(QWidget):
         body.className = "message-body";
         body.innerHTML = message.html;
         wrapper.appendChild(body);
-        messages.appendChild(wrapper);
+        fragment.appendChild(wrapper);
       });
+      messages.replaceChildren(fragment);
+    }
+    function renderState(state) {
+      latestState = state;
+      document.getElementById("chat-title").textContent = state.title;
+      document.getElementById("badge-backend").textContent = UI.backendPrefix + state.backend;
+      document.getElementById("badge-model").textContent = UI.modelPrefix + state.model;
+      document.getElementById("status-line").textContent = state.status;
+      renderSessions(state);
+      renderAttachments(state.attachments || []);
+      renderMessages(state);
       setBusy(state.busy);
       if (state.forceScroll) {
         requestAnimationFrame(() => scrollMessages(true));
@@ -1735,15 +1745,29 @@ class CodexWebChatWindow(QWidget):
         messages = []
         for item in self.history:
             image_urls = []
+            image_markers = []
             for image in item.get("images", []):
                 image_bytes = base64.b64decode(image) if isinstance(image, str) else image
+                image_markers.append(f"{len(image_bytes)}:{hashlib.sha1(image_bytes).hexdigest()[:12]}")
                 image_urls.append(f"data:image/png;base64,{base64.b64encode(image_bytes).decode('utf-8')}")
+            attachments = attachment_preview(item.get("attachments", []))
+            message_key_source = json.dumps(
+                {
+                    "role": item.get("role", ""),
+                    "content": item.get("content", ""),
+                    "images": image_markers,
+                    "attachments": attachments,
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            )
             messages.append({
                 "role": item["role"],
+                "key": hashlib.sha1(message_key_source.encode("utf-8")).hexdigest(),
                 "label": tr("you", self.language) if item["role"] == "user" else tr("assistant_local", self.language),
                 "html": self.message_to_html(item["content"]),
                 "images": image_urls,
-                "attachments": attachment_preview(item.get("attachments", [])),
+                "attachments": attachments,
             })
 
         title = tr("active_conversation", self.language) if self.history else tr("chat_local", self.language)

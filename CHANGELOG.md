@@ -2,6 +2,14 @@
 
 All notable changes to AI Assistant are documented here.
 
+## v3.5.2
+
+- Refined the About dialog with a more consistent update-check button layout.
+- Moved update checking into the About panel instead of the main tray menu.
+- Improved chat rendering to reduce visible refresh/flicker on slower PCs.
+- Renamed the tray area action from rectangle wording to screenshot wording.
+- Kept the installer safer for upgrades by supporting current-user/all-users installation and previous-path reuse.
+
 ## v3.5.1
 
 - Added chat attachments from the composer: images are sent as multimodal inputs, while readable documents are added as text context.

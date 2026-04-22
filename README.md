@@ -1,6 +1,6 @@
-# 👁️ AI Assistant v3.5.1
+# 👁️ AI Assistant v3.5.2
 
-[![Version](https://img.shields.io/badge/version-3.5.1-1f8ceb.svg)](https://github.com/zoott28354/ai_assistant/releases/tag/v3.5.1)
+[![Version](https://img.shields.io/badge/version-3.5.2-1f8ceb.svg)](https://github.com/zoott28354/ai_assistant/releases/tag/v3.5.2)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0f172a.svg)](https://github.com/zoott28354/ai_assistant)
 [![License](https://img.shields.io/badge/license-MIT-16a34a.svg)](https://github.com/zoott28354/ai_assistant/blob/main/LICENSE)
 [![Local First](https://img.shields.io/badge/local--first-yes-7c3aed.svg)](https://github.com/zoott28354/ai_assistant)
@@ -33,7 +33,7 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 - 🤖 Multiple local backends are supported: Ollama, LM Studio, Llama.cpp, Llama-Swap, and generic OpenAI-compatible endpoints.
 - ⚡ Fast desktop-first workflow: start from the tray, analyze an area or copied text, then continue in chat.
 - 🧠 Persistent sessions: conversations are stored in SQLite and can be resumed later.
-- 🖥️ Updated v3.5.1 UI: improved webview-based chat, better sidebar, multilingual interface, and cleaner internal architecture.
+- 🖥️ Updated UI: improved webview-based chat, better sidebar, multilingual interface, and cleaner internal architecture.
 - 📚 The sidebar supports search, rename, delete, and quick session access.
 - 📤 Single chats can be exported as Obsidian-friendly ZIP archives or as cleaner PDF documents.
 - 📎 The chat composer can attach images, documents, and PDFs for follow-up analysis.
@@ -82,7 +82,7 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 
 ## 🧭 How it works
 
-1. Download `AI_Assistant_Setup_v3.5.1.exe` from [Releases](https://github.com/zoott28354/ai_assistant/releases).
+1. Download `AI_Assistant_Setup_v3.5.2.exe` from [Releases](https://github.com/zoott28354/ai_assistant/releases).
 2. Install the app.
 3. Launch it and look for the icon in the system tray.
 4. With a right click you can:
@@ -263,7 +263,7 @@ For advanced users running from source, the project files remain available in th
 If you want a ready-to-use build:
 
 1. Go to [Releases](https://github.com/zoott28354/ai_assistant/releases)
-2. Download `AI_Assistant_Setup_v3.5.1.exe`
+2. Download `AI_Assistant_Setup_v3.5.2.exe`
 3. Install the app normally
 4. If Windows SmartScreen appears, choose `More info` and then `Run anyway`
 
@@ -280,7 +280,7 @@ See [`LICENSE`](LICENSE) for the full text.
 
 ## 📈 Project status
 
-v3.5.1 is a more mature version than the previous releases, especially in:
+v3.5.2 is a more mature version than the previous releases, especially in:
 
 - chat UI
 - session management

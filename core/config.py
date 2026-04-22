@@ -12,6 +12,8 @@ CHAT_DB_FILE_NAME = "chat_history.db"
 
 DEFAULT_CONFIG = {
     "language": "it",
+    "active_backend": "Ollama",
+    "active_model": "",
     "backends": {
         "Ollama": "http://localhost:11434",
         "LM Studio": "http://localhost:1234/v1",
@@ -106,6 +108,8 @@ def load_runtime_config(config_path=CONFIG_FILE):
                 data = json.load(f)
                 return {
                     "language": data.get("language", DEFAULT_CONFIG["language"]),
+                    "active_backend": data.get("active_backend", DEFAULT_CONFIG["active_backend"]),
+                    "active_model": data.get("active_model", DEFAULT_CONFIG["active_model"]),
                     "backends": {**DEFAULT_CONFIG["backends"], **data.get("backends", {})},
                     "api_keys": {**DEFAULT_CONFIG["api_keys"], **data.get("api_keys", {})},
                     "backend_display_names": data.get("backend_display_names", {}),
@@ -115,6 +119,8 @@ def load_runtime_config(config_path=CONFIG_FILE):
             pass
     return {
         "language": DEFAULT_CONFIG["language"],
+        "active_backend": DEFAULT_CONFIG["active_backend"],
+        "active_model": DEFAULT_CONFIG["active_model"],
         "backends": DEFAULT_CONFIG["backends"].copy(),
         "api_keys": DEFAULT_CONFIG["api_keys"].copy(),
         "backend_display_names": {},

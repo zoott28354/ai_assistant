@@ -1934,6 +1934,8 @@ class MainApp:
         # Load configuration
         self.backend_urls = self.load_config()
         self.language = self.backend_urls.get("language", "it")
+        self.active_backend = self.backend_urls.get("active_backend", AIBackend.OLLAMA)
+        self.active_model = self.backend_urls.get("active_model", "")
         
         # Initialize SQLite database for history
         self.init_db()
@@ -1985,6 +1987,8 @@ class MainApp:
     def save_config(self, config):
         """Save backend configuration to config.json"""
         try:
+            config["active_backend"] = self.active_backend
+            config["active_model"] = self.active_model
             save_runtime_config(config, CONFIG_FILE)
             self.backend_urls = config
             self.language = config.get("language", self.language)
@@ -2001,6 +2005,16 @@ class MainApp:
                 tr("error", self.language),
                 tr("save_error", self.language, message=str(e))
             )
+
+    def persist_runtime_selection(self):
+        self.backend_urls["active_backend"] = self.active_backend
+        self.backend_urls["active_model"] = self.active_model
+        if hasattr(self, "chat_window"):
+            self.chat_window.backend_urls = self.backend_urls
+        try:
+            save_runtime_config(self.backend_urls, CONFIG_FILE)
+        except Exception as exc:
+            print(f"Warning: unable to persist runtime selection: {exc}")
     
     def open_config_dialog(self):
         """Open configuration dialog"""

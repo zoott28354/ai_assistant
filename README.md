@@ -244,7 +244,7 @@ python -m venv venv
 
 AI Assistant stores its data locally on your machine.
 
-- `config.json`: backend URLs, interface language, and custom tray prompt templates
+- `config.json`: backend URLs, active backend/model selection, interface language, and custom tray prompt templates
 - `chat_history.db`: persistent SQLite chat history, including image-based analysis sessions, original attached documents, and rendered PDF pages when OCR/vision fallback is needed
 
 With a normal installation, user data is stored in `%AppData%\AI Assistant`.

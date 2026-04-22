@@ -79,11 +79,13 @@ class TrayController:
     def set_backend(self, backend):
         self.owner.active_backend = backend
         self.refresh_models()
+        self.owner.persist_runtime_selection()
         self.owner.chat_window.sync_runtime_context()
         self.update_menu()
 
     def set_model(self, model):
         self.owner.active_model = model
+        self.owner.persist_runtime_selection()
         self.owner.chat_window.sync_runtime_context()
         self.update_menu()
 

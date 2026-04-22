@@ -118,6 +118,91 @@ You can change them directly from the interface without editing files manually. 
 
 Context length and generation parameters are handled by the backend you choose. For example, Ollama, LM Studio, Llama.cpp, Llama-Swap, vLLM, and LocalAI each expose their own settings for context windows, memory use, and model runtime behavior. AI Assistant preserves the chat history and sends it to the selected backend, but it does not override those backend limits.
 
+## 🌐 Network and LAN FAQ
+
+### Can I run the AI backend on another PC in my local network?
+
+Yes. AI Assistant can connect to a backend running on another machine in the same LAN, as long as that backend listens on the network interface and the firewall allows the port.
+
+Example LAN setup:
+
+- PC A runs Ollama, LM Studio, Llama.cpp, or another compatible backend
+- PC B runs AI Assistant
+- AI Assistant is configured with the LAN IP address of PC A, such as `192.168.1.30`
+
+### How should I configure Ollama over LAN?
+
+If you want to replace the built-in `Ollama` backend with a remote Ollama server, use the native Ollama URL without `/v1`:
+
+```text
+Ollama: http://192.168.1.30:11434
+```
+
+On the PC running Ollama, make sure Ollama is listening on the network, not only on `localhost`. One common Windows setup is:
+
+```powershell
+setx OLLAMA_HOST "0.0.0.0:11434"
+```
+
+Then restart Ollama and allow the Windows Firewall prompt for port `11434`.
+
+### Can I keep local Ollama and add a LAN Ollama as Custom 1?
+
+Yes, and this is often the cleanest setup.
+
+Keep the default local backend:
+
+```text
+Ollama: http://localhost:11434
+```
+
+Then configure `Custom 1` as an OpenAI-compatible LAN endpoint:
+
+```text
+Name: Ollama LAN
+URL:  http://192.168.1.30:11434/v1
+Key:  empty
+```
+
+The difference is intentional:
+
+- `Ollama` uses Ollama's native API: `http://host:11434/api/chat`
+- `Custom 1` / `Custom 2` use OpenAI-compatible APIs: `http://host:11434/v1/chat/completions`
+
+### How do I test a LAN backend before using it in AI Assistant?
+
+From the PC running AI Assistant, first test the port:
+
+```powershell
+Test-NetConnection 192.168.1.30 -Port 11434
+```
+
+For Ollama native models:
+
+```powershell
+curl.exe http://192.168.1.30:11434/api/tags
+```
+
+For OpenAI-compatible endpoints:
+
+```powershell
+curl.exe http://192.168.1.30:11434/v1/models
+```
+
+If the model list works but chat does not, check that the selected model name matches exactly, for example `gemma4:latest` instead of `gemma4`.
+
+### What about LM Studio over LAN?
+
+LM Studio can also work over LAN if its server is configured to listen on the network and Windows Firewall allows the port.
+
+In AI Assistant, a LAN LM Studio endpoint usually looks like:
+
+```text
+LM Studio: http://192.168.1.30:1234/v1
+```
+
+If you prefer to keep the default local LM Studio entry unchanged, configure the remote one as `Custom 1` or `Custom 2` with a friendly name such as `LM Studio LAN`.
+
 ## 📋 Requirements
 
 ### To use the Windows installer

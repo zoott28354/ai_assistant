@@ -14,9 +14,10 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={localappdata}\Programs\{#MyAppName}
+DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
+UsePreviousAppDir=no
 LicenseFile={#MyProjectRoot}\LICENSE
 OutputDir={#MyOutputDir}
 OutputBaseFilename={#MyOutputBaseFilename}
@@ -26,7 +27,7 @@ Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-PrivilegesRequired=lowest
+PrivilegesRequired=admin
 UninstallDisplayIcon={app}\{#MyAppExeName}
 VersionInfoVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
@@ -67,15 +68,15 @@ russian.AdditionalIcons=Дополнительные ярлыки:
 japanese.AdditionalIcons=追加ショートカット:
 chinesesimplified.AdditionalIcons=其他快捷方式：
 
-italian.PortableMode=Salva i dati accanto all'app (modalita portable)
-english.PortableMode=Store data next to the app (portable mode)
-spanish.PortableMode=Guardar los datos junto a la app (modo portable)
-french.PortableMode=Enregistrer les donnees a cote de l'application (mode portable)
-german.PortableMode=Daten neben der App speichern (Portable-Modus)
-portuguese.PortableMode=Salvar os dados ao lado do app (modo portable)
-russian.PortableMode=Сохранять данные рядом с приложением (portable mode)
-japanese.PortableMode=アプリの横にデータを保存する（ポータブルモード）
-chinesesimplified.PortableMode=将数据保存在应用程序旁边（便携模式）
+italian.StartWithWindows=Avvia AI Assistant all'avvio di Windows
+english.StartWithWindows=Start AI Assistant when Windows starts
+spanish.StartWithWindows=Iniciar AI Assistant al iniciar Windows
+french.StartWithWindows=Lancer AI Assistant au demarrage de Windows
+german.StartWithWindows=AI Assistant beim Windows-Start ausfuehren
+portuguese.StartWithWindows=Iniciar AI Assistant ao iniciar o Windows
+russian.StartWithWindows=Запускать AI Assistant при запуске Windows
+japanese.StartWithWindows=Windows 起動時に AI Assistant を起動
+chinesesimplified.StartWithWindows=Windows 启动时启动 AI Assistant
 
 italian.RunApp=Avvia {#MyAppName}
 english.RunApp=Launch {#MyAppName}
@@ -99,10 +100,13 @@ chinesesimplified.RemoveUserDataPrompt=是否还要删除 AI Assistant 的用户
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:DesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "portablemode"; Description: "{cm:PortableMode}"; Flags: unchecked
+Name: "startup"; Description: "{cm:StartWithWindows}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
 Source: "{#MyAppDistDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Registry]
+Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#MyAppName}"; ValueData: """{app}\{#MyAppExeName}"""; Flags: uninsdeletevalue; Tasks: startup
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
@@ -115,24 +119,6 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:RunApp}"; Flags: nowait pos
 [Code]
 var
   RemoveUserData: Boolean;
-
-procedure CurStepChanged(CurStep: TSetupStep);
-var
-  MarkerPath: string;
-begin
-  if CurStep = ssPostInstall then
-  begin
-    MarkerPath := ExpandConstant('{app}\portable_mode.flag');
-    if WizardIsTaskSelected('portablemode') then
-    begin
-      SaveStringToFile(MarkerPath, 'portable', False);
-    end
-    else if FileExists(MarkerPath) then
-    begin
-      DeleteFile(MarkerPath);
-    end;
-  end;
-end;
 
 procedure InitializeUninstallProgressForm();
 begin

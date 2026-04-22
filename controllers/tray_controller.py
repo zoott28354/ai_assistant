@@ -70,6 +70,7 @@ class TrayController:
                 "open_chat": self.owner.chat_window.show,
                 "open_config": self.owner.open_config_dialog,
                 "open_about": self.owner.open_about_dialog,
+                "check_updates": self.owner.check_for_updates,
                 "set_backend": self.set_backend,
                 "set_model": self.set_model,
                 "quit_app": self.owner.app.quit,

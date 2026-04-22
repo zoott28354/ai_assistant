@@ -171,13 +171,18 @@ Principio corretto:
 
 ## Dati persistenti dell'app
 
-Installazione normale:
+Installazione installer Windows:
 
 ```text
-%AppData%\AI Assistant
+app in C:\Program Files\AI Assistant
+dati utente in %AppData%\AI Assistant
 ```
 
-Modalita portable:
+I dati utente restano separati per ogni account Windows anche se l'app e installata in `Program Files`.
+
+L'installer non propone piu la modalita portable. La task opzionale `Avvia all'avvio di Windows` registra l'app in `HKLM\Software\Microsoft\Windows\CurrentVersion\Run`.
+
+Installazione portable legacy/manuale:
 
 ```text
 accanto all'eseguibile installato

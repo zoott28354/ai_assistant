@@ -10,6 +10,9 @@ All notable changes to AI Assistant are documented here.
 - Added a Maintenance tab in Configure to open the local data folder and compact the SQLite history database.
 - Database compaction now permanently purges already-deleted sessions before running VACUUM, so large deleted chats actually release disk space.
 - Added friendly display names for Custom OpenAI-compatible endpoints, reflected in the tray, chat header, and session sidebar.
+- Persisted the active tray backend and model selection across app restarts.
+- Changed the Windows installer to install the app in `Program Files`, keep user data in `%AppData%`, remove the portable-mode checkbox, and offer optional startup with Windows.
+- Added a tray-based `Check for updates` action that checks GitHub Releases and opens the release page when a newer version is available.
 - Completed multilingual strings for the updated configuration dialog and attachment UI.
 - Updated documentation for custom endpoints, API keys, attachments, and the v3.5.1 installer.
 

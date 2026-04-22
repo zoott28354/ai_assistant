@@ -29,6 +29,7 @@ def build_tray_menu(
     menu.addSeparator()
     menu.addAction(tr("tray_config_backend", language), handlers["open_config"])
     menu.addAction(tr("tray_about", language), handlers["open_about"])
+    menu.addAction(tr("tray_check_updates", language), handlers["check_updates"])
     menu.addSeparator()
 
     backend_menu = menu.addMenu(tr("tray_engine", language))

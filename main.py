@@ -16,6 +16,7 @@ from core.config import (
     load_runtime_config,
     save_runtime_config,
 )
+from core.app_meta import APP_URL
 from core.i18n import APP_NAME, APP_VERSION, tr
 from services.session_service import (
     clear_history_db,
@@ -64,6 +65,11 @@ def resource_path(relative_path):
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
+
+
+def parse_version(value):
+    parts = re.findall(r"\d+", value or "")
+    return tuple(int(part) for part in parts[:4])
 
 class AIBackend:
     OLLAMA = "Ollama"
@@ -2092,6 +2098,47 @@ class MainApp:
         dialog = AboutDialog(self.language, parent)
         dialog.setWindowIcon(self.app_icon)
         dialog.exec()
+
+    def check_for_updates(self):
+        self.tray.contextMenu().hide()
+        parent = self.chat_window if self.chat_window.isVisible() else None
+        latest_url = f"{APP_URL}/releases/latest"
+
+        try:
+            repo_path = APP_URL.removeprefix("https://github.com/")
+            response = requests.get(
+                f"https://api.github.com/repos/{repo_path}/releases/latest",
+                timeout=8,
+                headers={"Accept": "application/vnd.github+json"},
+            )
+            response.raise_for_status()
+            release = response.json()
+            latest_tag = release.get("tag_name", "").strip()
+            latest_page = release.get("html_url") or latest_url
+        except Exception as exc:
+            QMessageBox.warning(
+                parent,
+                tr("update_title", self.language),
+                tr("update_failed", self.language, message=str(exc)),
+            )
+            return
+
+        if parse_version(latest_tag) > parse_version(APP_VERSION):
+            answer = QMessageBox.question(
+                parent,
+                tr("update_title", self.language),
+                tr("update_available", self.language, current=APP_VERSION, latest=latest_tag),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes,
+            )
+            if answer == QMessageBox.StandardButton.Yes:
+                QDesktopServices.openUrl(QUrl(latest_page))
+        else:
+            QMessageBox.information(
+                parent,
+                tr("update_title", self.language),
+                tr("update_current", self.language, current=APP_VERSION),
+            )
 
     def load_history_from_disk(self):
         if os.path.exists(HISTORY_FILE):

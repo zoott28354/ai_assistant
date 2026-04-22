@@ -8,3 +8,5 @@ mss
 pillow
 markdown
 openai
+pypdf
+pymupdf

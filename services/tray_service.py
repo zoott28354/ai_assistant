@@ -5,6 +5,11 @@ from PyQt6.QtWidgets import QMenu
 from core.i18n import tr
 
 
+def backend_display_name(backend_urls, backend):
+    display_name = backend_urls.get("backend_display_names", {}).get(backend, "")
+    return display_name.strip() or backend
+
+
 def build_tray_menu(
     language,
     tray,
@@ -12,7 +17,7 @@ def build_tray_menu(
     active_model,
     backend_urls,
     backend_names,
-    openai_compatible_name,
+    openai_compatible_names,
     models,
     handlers,
 ):
@@ -28,11 +33,13 @@ def build_tray_menu(
 
     backend_menu = menu.addMenu(tr("tray_engine", language))
     available_backends = list(backend_names)
-    custom_backend_url = backend_urls.get("backends", {}).get(openai_compatible_name, "").strip()
-    if custom_backend_url:
-        available_backends.append(openai_compatible_name)
+    for backend in openai_compatible_names:
+        custom_backend_url = backend_urls.get("backends", {}).get(backend, "").strip()
+        if custom_backend_url:
+            available_backends.append(backend)
+
     for backend in available_backends:
-        action = backend_menu.addAction(backend)
+        action = backend_menu.addAction(backend_display_name(backend_urls, backend))
         action.setCheckable(True)
         action.setChecked(active_backend == backend)
         action.triggered.connect(partial(handlers["set_backend"], backend))

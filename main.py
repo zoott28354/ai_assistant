@@ -25,12 +25,19 @@ from services.session_service import (
     load_sessions_from_db,
     persist_session_update,
     rename_session as rename_stored_session,
+    vacuum_history_db,
 )
 from services.export_service import (
     default_export_name,
     export_session_to_pdf,
     export_session_to_zip,
 )
+from services.attachment_service import (
+    attachment_preview,
+    attachment_file_filter,
+    read_attachment,
+)
+from services.tray_service import backend_display_name
 from ui.about_dialog import AboutDialog
 from ui.config_dialog import ConfigDialog
 from workers.ai_worker import AIWorker
@@ -44,8 +51,8 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QT
                              QStyle, QMessageBox, QListWidget, QListWidgetItem, 
                              QScrollArea, QFrame, QSizePolicy, QAbstractItemView, QDialog, QMenu,
                              QSplitter, QFileDialog)
-from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QObject, QSize, QTimer
-from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor
+from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QObject, QSize, QTimer, QUrl
+from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor, QDesktopServices
 from PyQt6.QtWebChannel import QWebChannel
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebEngineCore import QWebEngineSettings
@@ -63,7 +70,8 @@ class AIBackend:
     LM_STUDIO = "LM Studio"
     LLAMA_CPP = "Llama.cpp"
     LLAMA_SWAP = "Llama-Swap"
-    OPENAI_COMPATIBLE = "Compatibile OpenAI"
+    CUSTOM_1 = "Custom 1"
+    CUSTOM_2 = "Custom 2"
 
 # --- STILE MODERNO WINDOWS 11 FLUENT ---
 STYLE_SHEET = """
@@ -731,9 +739,26 @@ class WebChatBridge(QObject):
     new_chat_requested = pyqtSignal()
     ready = pyqtSignal()
 
+    def __init__(self):
+        super().__init__()
+        self.attachment_picker = None
+        self.attachment_remover = None
+
     @pyqtSlot(str)
     def submitMessage(self, text):
         self.send_requested.emit(text)
+
+    @pyqtSlot(result=str)
+    def selectAttachments(self):
+        if callable(self.attachment_picker):
+            return self.attachment_picker()
+        return "[]"
+
+    @pyqtSlot(int, result=str)
+    def removeAttachment(self, index):
+        if callable(self.attachment_remover):
+            return self.attachment_remover(index)
+        return "[]"
 
     @pyqtSlot()
     def notifyReady(self):
@@ -785,6 +810,7 @@ class CodexWebChatWindow(QWidget):
         self.session_factory = None
         self.runtime_context_provider = None
         self.active_workers = []
+        self.pending_attachments = []
 
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -804,6 +830,8 @@ class CodexWebChatWindow(QWidget):
 
         self.web_channel = QWebChannel(self.web_view.page())
         self.web_bridge = WebChatBridge()
+        self.web_bridge.attachment_picker = self.pick_attachments
+        self.web_bridge.attachment_remover = self.remove_pending_attachment
         self.web_channel.registerObject("bridge", self.web_bridge)
         self.web_view.page().setWebChannel(self.web_channel)
         self.web_bridge.send_requested.connect(self.send_msg)
@@ -863,6 +891,8 @@ class CodexWebChatWindow(QWidget):
             "backendPrefix": tr("backend_prefix", self.language),
             "modelPrefix": tr("model_prefix", self.language),
             "dividerResize": tr("divider_resize", self.language),
+            "attachFiles": tr("attach_files", self.language),
+            "removeAttachment": tr("remove_attachment", self.language),
         }
         html = """<!DOCTYPE html>
 <html lang="__LANG__">
@@ -1267,7 +1297,83 @@ class CodexWebChatWindow(QWidget):
       background: linear-gradient(180deg, rgba(26, 33, 43, 0.98) 0%, rgba(20, 27, 36, 0.98) 100%);
       overflow: hidden;
     }
-    .composer-form { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 10px; padding: 12px 12px 12px 14px; }
+    .attachment-strip {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 14px 0 14px;
+    }
+    .attachment-strip.has-items { display: flex; }
+    .attachment-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 240px;
+      min-height: 32px;
+      padding: 6px 8px 6px 10px;
+      border: 1px solid #31445a;
+      border-radius: 999px;
+      background: rgba(31, 43, 57, 0.92);
+      color: #d9e7f5;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .attachment-chip span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .message-attachments {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 14px 0;
+    }
+    .message-attachment {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 280px;
+      min-height: 34px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid #31445a;
+      background: rgba(24, 34, 46, 0.88);
+      color: #d9e7f5;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .message-attachment span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .attachment-remove {
+      min-width: 22px;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border-radius: 50%;
+      background: rgba(76, 91, 110, 0.9);
+      color: #eaf2fb;
+      line-height: 1;
+      font-size: 14px;
+    }
+    .attachment-remove:hover { background: rgba(99, 117, 140, 0.95); }
+    .composer-form { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 10px; padding: 12px 12px 12px 14px; }
+    .attach-button {
+      min-width: 46px;
+      width: 46px;
+      height: 46px;
+      padding: 0;
+      border-radius: 16px;
+      background: #263548;
+      color: #dce9f7;
+      font-size: 26px;
+      line-height: 1;
+    }
+    .attach-button:hover { background: #32465e; }
+    .attach-button:disabled { background: #243040; color: #74869a; }
     textarea {
       resize: none;
       min-height: 72px;
@@ -1327,7 +1433,9 @@ class CodexWebChatWindow(QWidget):
       <footer class="composer-shell">
         <div class="status" id="status-line"></div>
         <div class="composer-card">
+          <div class="attachment-strip" id="attachment-strip"></div>
           <form class="composer-form" id="composer-form">
+            <button type="button" class="attach-button" id="composer-attach" title="__ATTACH_FILES__" aria-label="__ATTACH_FILES__">+</button>
             <textarea id="composer-input" placeholder="__COMPOSER_PLACEHOLDER__"></textarea>
             <button type="submit" id="composer-send">__SEND__</button>
           </form>
@@ -1341,6 +1449,7 @@ class CodexWebChatWindow(QWidget):
     let latestState = null;
     let isDraggingDivider = false;
     let sidebarSearchQuery = "";
+    let pendingAttachments = [];
     function closeAllSessionMenus() {
       document.querySelectorAll(".session-menu.open").forEach((menu) => menu.classList.remove("open"));
     }
@@ -1358,13 +1467,43 @@ class CodexWebChatWindow(QWidget):
     function setBusy(isBusy) {
       const input = document.getElementById("composer-input");
       const button = document.getElementById("composer-send");
+      const attachButton = document.getElementById("composer-attach");
       input.disabled = !!isBusy;
-      button.disabled = !!isBusy || !input.value.trim();
+      attachButton.disabled = !!isBusy;
+      button.disabled = !!isBusy || (!input.value.trim() && pendingAttachments.length === 0);
     }
     function updateSendEnabled() {
       const input = document.getElementById("composer-input");
       const button = document.getElementById("composer-send");
-      button.disabled = !!(latestState && latestState.busy) || !input.value.trim();
+      button.disabled = !!(latestState && latestState.busy) || (!input.value.trim() && pendingAttachments.length === 0);
+    }
+    function renderAttachments(attachments) {
+      pendingAttachments = attachments || [];
+      const strip = document.getElementById("attachment-strip");
+      strip.innerHTML = "";
+      strip.classList.toggle("has-items", pendingAttachments.length > 0);
+      pendingAttachments.forEach((attachment, index) => {
+        const chip = document.createElement("div");
+        chip.className = "attachment-chip";
+        const icon = attachment.kind === "image" ? "🖼️" : "📄";
+        chip.innerHTML = `<span>${icon} ${escapeHtml(attachment.name)}</span>`;
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "attachment-remove";
+        remove.title = UI.removeAttachment;
+        remove.setAttribute("aria-label", UI.removeAttachment);
+        remove.textContent = "×";
+        remove.addEventListener("click", () => {
+          if (!bridge) return;
+          bridge.removeAttachment(index, (payload) => {
+            renderAttachments(JSON.parse(payload || "[]"));
+            updateSendEnabled();
+          });
+        });
+        chip.appendChild(remove);
+        strip.appendChild(chip);
+      });
+      updateSendEnabled();
     }
     function renderSessions(state) {
       const list = document.getElementById("session-list");
@@ -1448,6 +1587,7 @@ class CodexWebChatWindow(QWidget):
       document.getElementById("badge-model").textContent = UI.modelPrefix + state.model;
       document.getElementById("status-line").textContent = state.status;
       renderSessions(state);
+      renderAttachments(state.attachments || []);
       const messages = document.getElementById("messages");
       messages.innerHTML = "";
       state.messages.forEach((message) => {
@@ -1468,6 +1608,18 @@ class CodexWebChatWindow(QWidget):
             wrapper.appendChild(img);
           });
         }
+        if (message.attachments && message.attachments.length) {
+          const attachmentList = document.createElement("div");
+          attachmentList.className = "message-attachments";
+          message.attachments.forEach((attachment) => {
+            const chip = document.createElement("div");
+            chip.className = "message-attachment";
+            const icon = attachment.kind === "image" ? "🖼️" : "📄";
+            chip.innerHTML = `<span>${icon} ${escapeHtml(attachment.name)}</span>`;
+            attachmentList.appendChild(chip);
+          });
+          wrapper.appendChild(attachmentList);
+        }
         const body = document.createElement("div");
         body.className = "message-body";
         body.innerHTML = message.html;
@@ -1487,6 +1639,7 @@ class CodexWebChatWindow(QWidget):
       const input = document.getElementById("composer-input");
       const divider = document.getElementById("sidebar-divider");
       const sidebarSearch = document.getElementById("sidebar-search");
+      const attachButton = document.getElementById("composer-attach");
       document.getElementById("new-chat-button").addEventListener("click", () => {
         if (bridge) bridge.createNewChat();
       });
@@ -1513,6 +1666,12 @@ class CodexWebChatWindow(QWidget):
         document.body.style.userSelect = "";
       });
       input.addEventListener("input", updateSendEnabled);
+      attachButton.addEventListener("click", () => {
+        if (!bridge || (latestState && latestState.busy)) return;
+        bridge.selectAttachments((payload) => {
+          renderAttachments(JSON.parse(payload || "[]"));
+        });
+      });
       input.addEventListener("keydown", (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
@@ -1522,9 +1681,10 @@ class CodexWebChatWindow(QWidget):
       form.addEventListener("submit", (event) => {
         event.preventDefault();
         const value = input.value.trim();
-        if (!value || !bridge || (latestState && latestState.busy)) return;
+        if ((!value && pendingAttachments.length === 0) || !bridge || (latestState && latestState.busy)) return;
         bridge.submitMessage(value);
         input.value = "";
+        renderAttachments([]);
         updateSendEnabled();
       });
       if (typeof QWebChannel !== "undefined") {
@@ -1549,6 +1709,7 @@ class CodexWebChatWindow(QWidget):
             .replace("__MODEL_BADGE__", ui["modelBadge"])
             .replace("__DIVIDER_RESIZE__", ui["dividerResize"])
             .replace("__COMPOSER_PLACEHOLDER__", ui["composerPlaceholder"])
+            .replace("__ATTACH_FILES__", ui["attachFiles"])
             .replace("__SEND__", ui["send"])
             .replace("__UI_JSON__", json.dumps(ui, ensure_ascii=False)))
 
@@ -1576,6 +1737,7 @@ class CodexWebChatWindow(QWidget):
                 "label": tr("you", self.language) if item["role"] == "user" else tr("assistant_local", self.language),
                 "html": self.message_to_html(item["content"]),
                 "images": image_urls,
+                "attachments": attachment_preview(item.get("attachments", [])),
             })
 
         title = tr("active_conversation", self.language) if self.history else tr("chat_local", self.language)
@@ -1587,7 +1749,7 @@ class CodexWebChatWindow(QWidget):
             label = session.get("label", tr("session_fallback", self.language, index=real_index + 1))
             meta_parts = []
             if session.get("backend"):
-                meta_parts.append(session["backend"])
+                meta_parts.append(self.display_backend_name(session["backend"]))
             if session.get("model"):
                 meta_parts.append(session["model"])
             meta = " • ".join(meta_parts) if meta_parts else tr("saved_session", self.language)
@@ -1599,13 +1761,14 @@ class CodexWebChatWindow(QWidget):
             })
         return {
             "title": title,
-            "backend": self.backend or tr("not_selected", self.language),
+            "backend": self.display_backend_name(self.backend),
             "model": self.model or tr("not_selected", self.language),
             "status": status,
             "busy": self.is_generating,
             "showWelcome": len(self.history) == 0,
             "sessions": sessions,
             "messages": messages,
+            "attachments": json.loads(self.attachment_preview_payload()),
             "forceScroll": force_scroll,
         }
 
@@ -1640,6 +1803,40 @@ class CodexWebChatWindow(QWidget):
         self.current_session_idx = current_idx
         self.render_web_state()
 
+    def display_backend_name(self, backend):
+        if not backend:
+            return tr("not_selected", self.language)
+        return backend_display_name(self.backend_urls, backend)
+
+    def attachment_preview_payload(self):
+        return json.dumps(attachment_preview(self.pending_attachments), ensure_ascii=False)
+
+    def pick_attachments(self):
+        paths, _ = QFileDialog.getOpenFileNames(
+            self,
+            tr("attach_files", self.language),
+            "",
+            attachment_file_filter(),
+        )
+        if not paths:
+            return self.attachment_preview_payload()
+
+        for path in paths:
+            try:
+                self.pending_attachments.append(read_attachment(path))
+            except Exception as exc:
+                QMessageBox.warning(
+                    self,
+                    tr("attachment_error_title", self.language),
+                    tr("attachment_error_body", self.language, name=os.path.basename(path), message=str(exc)),
+                )
+        return self.attachment_preview_payload()
+
+    def remove_pending_attachment(self, index):
+        if 0 <= index < len(self.pending_attachments):
+            del self.pending_attachments[index]
+        return self.attachment_preview_payload()
+
     def sync_runtime_context(self, render=True):
         if callable(self.runtime_context_provider):
             model, backend = self.runtime_context_provider()
@@ -1655,6 +1852,7 @@ class CodexWebChatWindow(QWidget):
         self.idx, self.history, self.model, self.backend = idx, hist, model, backend
         self.current_session_idx = idx
         self.is_generating = False
+        self.pending_attachments = []
         self.sync_runtime_context(render=False)
         self.render_web_state(force_scroll=True)
         if bring_forward:
@@ -1664,7 +1862,7 @@ class CodexWebChatWindow(QWidget):
 
     def send_msg(self, text=None):
         txt = (text or "").strip()
-        if not txt or self.is_generating:
+        if (not txt and not self.pending_attachments) or self.is_generating:
             return
         if self.idx < 0:
             if callable(self.session_factory):
@@ -1674,7 +1872,17 @@ class CodexWebChatWindow(QWidget):
             if self.idx < 0:
                 return
         self.sync_runtime_context(render=False)
-        self.history.append({'role': 'user', 'content': txt})
+        attachments = list(self.pending_attachments)
+        self.pending_attachments = []
+        content = txt or tr("attachments_default_prompt", self.language)
+        images = [attachment["data"] for attachment in attachments if attachment.get("kind") == "image"]
+        documents = [attachment for attachment in attachments if attachment.get("kind") == "document"]
+        message = {'role': 'user', 'content': content}
+        if images:
+            message["images"] = images
+        if documents:
+            message["attachments"] = documents
+        self.history.append(message)
         self.render_web_state(force_scroll=True)
         self.history_updated.emit(self.idx, self.history)
         self.ask_ai()
@@ -1806,11 +2014,14 @@ class MainApp:
                 AIBackend.LM_STUDIO,
                 AIBackend.LLAMA_CPP,
                 AIBackend.LLAMA_SWAP,
-                AIBackend.OPENAI_COMPATIBLE,
+                AIBackend.CUSTOM_1,
+                AIBackend.CUSTOM_2,
             ],
             self.language,
             parent,
         )
+        dialog.compact_database_requested.connect(self.compact_history_database)
+        dialog.open_data_folder_requested.connect(self.open_data_folder)
         
         if dialog.exec() == QDialog.DialogCode.Accepted:
             new_config = dialog.get_config()
@@ -1822,6 +2033,42 @@ class MainApp:
             self.chat_window.render_web_state()
             self.refresh_mods()
             self.update_menu()
+
+    def open_data_folder(self):
+        QDesktopServices.openUrl(QUrl.fromLocalFile(APP_DATA_DIR))
+
+    def format_bytes(self, size):
+        value = float(size)
+        for unit in ("B", "KB", "MB", "GB"):
+            if value < 1024 or unit == "GB":
+                return f"{value:.1f} {unit}" if unit != "B" else f"{int(value)} {unit}"
+            value /= 1024
+
+    def compact_history_database(self):
+        parent = self.chat_window if self.chat_window.isVisible() else None
+        confirm = QMessageBox.question(
+            parent,
+            tr("config_maintenance_title", self.language),
+            tr("compact_database_confirm", self.language),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            _, _, recovered = vacuum_history_db(CHAT_DB_FILE)
+            QMessageBox.information(
+                parent,
+                tr("config_maintenance_title", self.language),
+                tr("compact_database_done", self.language, size=self.format_bytes(recovered)),
+            )
+        except Exception as e:
+            QMessageBox.warning(
+                parent,
+                tr("error", self.language),
+                tr("save_error", self.language, message=str(e)),
+            )
 
     def open_about_dialog(self):
         self.tray.contextMenu().hide()

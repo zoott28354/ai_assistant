@@ -5,6 +5,7 @@ from openai import OpenAI
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from core.i18n import tr
+from services.attachment_service import attachment_prompt_text
 
 
 class AIWorker(QThread):
@@ -21,17 +22,34 @@ class AIWorker(QThread):
 
     def run(self):
         try:
+            request_history = []
+            for message in self.history:
+                prepared = dict(message)
+                ocr_images = []
+                for attachment in message.get("attachments", []) or []:
+                    ocr_images.extend(attachment.get("ocr_images", []) or [])
+                if ocr_images:
+                    prepared["images"] = list(prepared.get("images", []) or []) + ocr_images
+                prepared["content"] = attachment_prompt_text(
+                    message.get("content", ""),
+                    message.get("attachments", []),
+                    tr("attachments_default_prompt", self.language),
+                )
+                prepared.pop("attachments", None)
+                request_history.append(prepared)
+
             if self.backend == self.ollama_backend_name:
-                res = ollama.chat(model=self.model, messages=self.history, stream=False)
+                res = ollama.chat(model=self.model, messages=request_history, stream=False)
                 answer = res["message"]["content"]
             else:
                 base_url = self.backend_urls.get("backends", {}).get(self.backend, "")
                 if not base_url:
                     raise Exception(tr("url_not_configured", self.language))
 
-                client = OpenAI(base_url=base_url, api_key="sk-no-key-required")
+                api_key = self.backend_urls.get("api_keys", {}).get(self.backend, "").strip()
+                client = OpenAI(base_url=base_url, api_key=api_key or "sk-no-key-required")
                 msgs = []
-                for m in self.history:
+                for m in request_history:
                     if "images" in m and m["images"]:
                         content = [{"type": "text", "text": m["content"]}]
                         for img in m["images"]:

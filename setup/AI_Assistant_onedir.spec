@@ -18,6 +18,7 @@ a = Analysis(
         (os.path.join(ROOT_DIR, 'ai_assistant.ico'), '.'),
         (os.path.join(ROOT_DIR, 'LICENSE'), '.'),
         (os.path.join(ROOT_DIR, 'README.md'), '.'),
+        (os.path.join(ROOT_DIR, 'ui', 'assets'), os.path.join('ui', 'assets')),
     ],
     hiddenimports=[],
     hookspath=[],

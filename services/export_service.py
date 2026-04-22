@@ -42,6 +42,15 @@ def _image_bytes(image):
     return b""
 
 
+def _attachment_bytes(attachment):
+    data = attachment.get("data", "")
+    if isinstance(data, bytes):
+        return data
+    if isinstance(data, str) and data:
+        return base64.b64decode(data)
+    return b""
+
+
 def _role_label(role, language):
     return tr("you", language) if role == "user" else tr("assistant_local", language)
 
@@ -73,6 +82,20 @@ def build_markdown(session, language="en", asset_prefix="assets"):
             assets.append((f"{asset_prefix}/{image_name}", data))
             lines.extend([f"![{image_name}]({asset_prefix}/{image_name})", ""])
             image_counter += 1
+        attachments = message.get("attachments", []) or []
+        if attachments:
+            lines.extend(["**Attachments**", ""])
+            for attachment_index, attachment in enumerate(attachments, start=1):
+                name = attachment.get("name", "file")
+                asset_name = f"attachment-{message_index:03d}-{attachment_index:03d}-{safe_filename(name, 'attachment')}"
+                data = _attachment_bytes(attachment)
+                if data:
+                    asset_path = f"{asset_prefix}/{asset_name}"
+                    assets.append((asset_path, data))
+                    lines.append(f"- [{name}]({asset_path})")
+                else:
+                    lines.append(f"- {name}")
+            lines.append("")
         content = (message.get("content") or "").strip()
         if content:
             lines.extend([content, ""])
@@ -126,6 +149,8 @@ def _build_pdf_html(session, language="en"):
         ".body code{font-family:Consolas,monospace;background:#eef2f7;color:#164b78;border-radius:5px;padding:2px 5px;}",
         ".body pre code{background:transparent;color:inherit;padding:0;}",
         ".image-wrap{margin:4px 0 8px 0;page-break-inside:avoid;}",
+        ".attachments{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px 0;}",
+        ".attachment{display:inline-block;border:1px solid #cbd5e1;border-radius:999px;background:#f8fafc;color:#334155;padding:5px 9px;font-size:9.5pt;font-weight:700;}",
         "img{max-width:100%;height:auto;border:1px solid #d0d7e2;border-radius:8px;background:#f8fafc;}",
         "</style></head><body>",
         "<div class='page'>",
@@ -147,6 +172,13 @@ def _build_pdf_html(session, language="en"):
                 encoded = base64.b64encode(data).decode("ascii")
                 width = _pdf_image_width(data)
                 parts.append(f"<div class='image-wrap'><img width='{width}' src='data:image/png;base64,{encoded}' /></div>")
+        attachments = message.get("attachments", []) or []
+        if attachments:
+            parts.append("<div class='attachments'>")
+            for attachment in attachments:
+                name = html.escape(attachment.get("name", "file"))
+                parts.append(f"<span class='attachment'>📄 {name}</span>")
+            parts.append("</div>")
         content = markdown.markdown(
             message.get("content") or "",
             extensions=["fenced_code", "tables", "nl2br"],

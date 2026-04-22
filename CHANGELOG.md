@@ -2,6 +2,17 @@
 
 All notable changes to AI Assistant are documented here.
 
+## v3.5.1
+
+- Added chat attachments from the composer: images are sent as multimodal inputs, while readable documents are added as text context.
+- Original attached documents are preserved in chat history and included in ZIP exports.
+- Added scanned PDF fallback: PDFs without extractable text are rendered as page images and sent to compatible vision/OCR models.
+- Added a Maintenance tab in Configure to open the local data folder and compact the SQLite history database.
+- Database compaction now permanently purges already-deleted sessions before running VACUUM, so large deleted chats actually release disk space.
+- Added friendly display names for Custom OpenAI-compatible endpoints, reflected in the tray, chat header, and session sidebar.
+- Completed multilingual strings for the updated configuration dialog and attachment UI.
+- Updated documentation for custom endpoints, API keys, attachments, and the v3.5.1 installer.
+
 ## v3.5
 
 - Added per-chat export from the sidebar menu as PDF or ZIP with Markdown and original image assets.

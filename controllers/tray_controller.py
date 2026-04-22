@@ -59,7 +59,10 @@ class TrayController:
                 self.backend_enum.LLAMA_CPP,
                 self.backend_enum.LLAMA_SWAP,
             ],
-            self.backend_enum.OPENAI_COMPATIBLE,
+            [
+                self.backend_enum.CUSTOM_1,
+                self.backend_enum.CUSTOM_2,
+            ],
             self.refresh_models(),
             {
                 "start_vision": self.start_vision,

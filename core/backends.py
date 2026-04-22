@@ -8,23 +8,28 @@ def openai_models_url(base_url):
     base = (base_url or "").strip().rstrip("/")
     if not base:
         return ""
-    if base.endswith("/v1"):
+    if base.endswith("/v1") or base.endswith("/openai"):
         return f"{base}/models"
     return f"{base}/v1/models"
 
 
-def test_backend_connection(backend_name, url, timeout=4, lang="it", ollama_backend_name="Ollama"):
+def auth_headers(api_key):
+    key = (api_key or "").strip()
+    return {"Authorization": f"Bearer {key}"} if key else {}
+
+
+def test_backend_connection(backend_name, url, timeout=4, lang="it", ollama_backend_name="Ollama", api_key=""):
     cleaned_url = (url or "").strip()
     if not cleaned_url:
         return False, tr("url_not_configured", lang)
 
     try:
         if backend_name == ollama_backend_name:
-            response = requests.get(f"{cleaned_url.rstrip('/')}/api/tags", timeout=timeout)
+            response = requests.get(f"{cleaned_url.rstrip('/')}/api/tags", timeout=timeout, headers=auth_headers(api_key))
             response.raise_for_status()
             models = [m.get("model", "") for m in response.json().get("models", []) if m.get("model")]
         else:
-            response = requests.get(openai_models_url(cleaned_url), timeout=timeout)
+            response = requests.get(openai_models_url(cleaned_url), timeout=timeout, headers=auth_headers(api_key))
             response.raise_for_status()
             models = [m.get("id", "") for m in response.json().get("data", []) if m.get("id")]
         if models:
@@ -42,10 +47,11 @@ def test_backend_connection(backend_name, url, timeout=4, lang="it", ollama_back
 
 def fetch_backend_models(active_backend, backend_urls, active_model="", timeout=4, lang="it", ollama_backend_name="Ollama"):
     try:
+        api_key = backend_urls.get("api_keys", {}).get(active_backend, "").strip()
         if active_backend == ollama_backend_name:
             base_url = backend_urls.get("backends", {}).get(active_backend, "").strip()
             if base_url:
-                response = requests.get(f"{base_url.rstrip('/')}/api/tags", timeout=timeout)
+                response = requests.get(f"{base_url.rstrip('/')}/api/tags", timeout=timeout, headers=auth_headers(api_key))
                 response.raise_for_status()
                 models = [m.get("model") for m in response.json().get("models", []) if m.get("model")]
             else:
@@ -54,7 +60,7 @@ def fetch_backend_models(active_backend, backend_urls, active_model="", timeout=
             base_url = backend_urls.get("backends", {}).get(active_backend, "").strip()
             if not base_url:
                 return [tr("url_not_configured", lang)], active_model
-            response = requests.get(openai_models_url(base_url), timeout=timeout)
+            response = requests.get(openai_models_url(base_url), timeout=timeout, headers=auth_headers(api_key))
             response.raise_for_status()
             models = [m.get("id") for m in response.json().get("data", []) if m.get("id")]
 

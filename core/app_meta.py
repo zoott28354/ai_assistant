@@ -1,6 +1,6 @@
 APP_NAME = "AI Assistant"
 APP_SLUG = "AI_Assistant"
-APP_VERSION = "3.5"
+APP_VERSION = "3.5.1"
 APP_PUBLISHER = "zoott28354"
 APP_URL = "https://github.com/zoott28354/ai_assistant"
 APP_COPYRIGHT = "Copyright (c) 2026 zoott28354"

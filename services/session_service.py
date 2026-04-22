@@ -70,6 +70,10 @@ def init_db(db_path):
         )
         """
     )
+    cursor.execute("PRAGMA table_info(messages)")
+    message_columns = {row[1] for row in cursor.fetchall()}
+    if "attachments" not in message_columns:
+        cursor.execute("ALTER TABLE messages ADD COLUMN attachments TEXT")
     conn.commit()
     conn.close()
 
@@ -91,7 +95,7 @@ def load_sessions_from_db(db_path):
     for session_id, label, model, backend, created_at, updated_at in sessions_data:
         cursor.execute(
             """
-            SELECT role, content, images
+            SELECT role, content, images, attachments
             FROM messages
             WHERE session_id = ?
             ORDER BY created_at ASC
@@ -101,12 +105,17 @@ def load_sessions_from_db(db_path):
         messages_data = cursor.fetchall()
 
         history = []
-        for role, content, images in messages_data:
+        for role, content, images, attachments in messages_data:
             message = {"role": role, "content": content}
             if images:
                 try:
                     image_list = json.loads(images)
                     message["images"] = [base64.b64decode(img) for img in image_list]
+                except Exception:
+                    pass
+            if attachments:
+                try:
+                    message["attachments"] = json.loads(attachments)
                 except Exception:
                     pass
             history.append(message)
@@ -198,6 +207,7 @@ def persist_session_update(sessions, index, history, active_model, active_backen
 
     for msg in history:
         images = None
+        attachments = None
         if msg.get("images"):
             try:
                 image_list = [
@@ -207,12 +217,17 @@ def persist_session_update(sessions, index, history, active_model, active_backen
                 images = json.dumps(image_list)
             except Exception:
                 pass
+        if msg.get("attachments"):
+            try:
+                attachments = json.dumps(msg["attachments"], ensure_ascii=False)
+            except Exception:
+                pass
         cursor.execute(
             """
-            INSERT INTO messages (session_id, role, content, images)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO messages (session_id, role, content, images, attachments)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (session_id, msg["role"], msg["content"], images),
+            (session_id, msg["role"], msg["content"], images, attachments),
         )
 
     conn.commit()
@@ -233,6 +248,27 @@ def clear_history_db(db_path):
     cursor.execute("UPDATE sessions SET is_deleted = 1")
     conn.commit()
     conn.close()
+
+
+def vacuum_history_db(db_path):
+    before_size = os.path.getsize(db_path) if os.path.exists(db_path) else 0
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        DELETE FROM messages
+        WHERE session_id IN (
+            SELECT id FROM sessions WHERE is_deleted = 1
+        )
+        """
+    )
+    cursor.execute("DELETE FROM sessions WHERE is_deleted = 1")
+    conn.commit()
+    cursor.execute("VACUUM")
+    conn.commit()
+    conn.close()
+    after_size = os.path.getsize(db_path) if os.path.exists(db_path) else 0
+    return before_size, after_size, max(0, before_size - after_size)
 
 
 def rename_session(sessions, idx, new_label, db_path):

@@ -23,16 +23,16 @@ La finestra chat e il workspace dove continuare, rileggere, cercare, rinominare,
 Workspace attuale:
 
 ```text
-C:\Users\giuli\Documents\GitHub\AI_Assistant
-```
-
-Il vecchio workspace:
-
-```text
 E:\AI_Assistant.claude
 ```
 
-potrebbe non esistere piu. Non usarlo come riferimento operativo.
+Nota: in alcuni momenti e stata usata anche questa copia:
+
+```text
+C:\Users\giuli\Documents\GitHub\AI_Assistant
+```
+
+Non cambiare workspace senza confermare con l'utente e senza controllare `git status -sb`.
 
 ## Comandi utili
 
@@ -75,13 +75,13 @@ cmd /c setup\build_installer.bat
 Output installer:
 
 ```text
-installer_output\AI_Assistant_Setup_v3.4.exe
+installer_output\AI_Assistant_Setup_v3.5.1.exe
 ```
 
 Aggiornamento asset release GitHub:
 
 ```powershell
-gh release upload v3.4 installer_output\AI_Assistant_Setup_v3.4.exe --repo zoott28354/ai_assistant --clobber
+gh release upload v3.5.1 installer_output\AI_Assistant_Setup_v3.5.1.exe --repo zoott28354/ai_assistant --clobber
 ```
 
 ## File locali da non committare
@@ -114,6 +114,7 @@ Non committare mai:
 - `services/capture_service.py`: capture/snipping e immagini.
 - `services/clipboard_service.py`: testo e clipboard.
 - `services/export_service.py`: export chat ZIP/PDF.
+- `services/attachment_service.py`: lettura allegati chat, immagini, documenti testuali, DOCX, PDF e fallback OCR/vision tramite rendering pagine PDF.
 - `services/tray_service.py`: costruzione menu tray.
 - `ui/config_dialog.py`: finestra Configure.
 - `ui/about_dialog.py`: finestra About.
@@ -146,14 +147,14 @@ git status -sb
 La release pubblica attuale e:
 
 ```text
-v3.4
+v3.5.1
 ```
 
 Quando si cambia codice che finisce nell'installer:
 
 1. commit e push su `main`
 2. build installer con `setup\build_installer.bat`
-3. upload asset release `v3.4` con `gh release upload ... --clobber`
+3. upload asset release `v3.5.1` con `gh release upload ... --clobber`
 
 ## Note architetturali
 
@@ -191,7 +192,7 @@ cartella progetto
 File principali:
 
 - `config.json`: backend, lingua, prompt personalizzati.
-- `chat_history.db`: cronologia SQLite, incluse sessioni con immagini.
+- `chat_history.db`: cronologia SQLite, incluse sessioni con immagini, allegati originali e pagine PDF renderizzate per OCR/vision quando necessario.
 
 ## Multilingua
 
@@ -229,9 +230,40 @@ Lingue installer incluse:
 
 Il cinese richiede `ChineseSimplified.isl` installato nella cartella `Languages` di Inno Setup.
 
+## Allegati Chat
+
+La chat supporta il pulsante `+` nel composer.
+
+Allegati supportati:
+
+- immagini: inviate come input multimodale al backend compatibile
+- file di testo, Markdown, codice, CSV, JSON, YAML, log: letti e inseriti come contesto testuale
+- DOCX: testo estratto dal documento
+- PDF: testo estratto tramite `pypdf`; se non c'e testo estraibile, le pagine vengono renderizzate con `pymupdf` e inviate come immagini al modello OCR/vision compatibile
+
+Gli allegati vengono salvati nella cronologia come parte del messaggio inviato:
+
+- immagini nei campi immagine del messaggio
+- documenti con testo estratto, nome file e binario originale in base64
+- PDF scansionati con file originale e pagine renderizzate in memoria/base64 per il modello
+
+In chat i documenti devono restare visibili come allegati/chip, non venire incollati nel testo visibile del messaggio. Il testo estratto viene aggiunto solo al prompt interno passato all'LLM.
+
+## Backend Custom
+
+`Custom 1` e `Custom 2` sono endpoint OpenAI-compatible generici.
+
+Ogni custom puo avere:
+
+- URL endpoint
+- API key opzionale
+- Nome visuale
+
+Il nome visuale deve comparire nella tray, nel badge alto della chat e nella sidebar, mentre il backend interno resta `Custom 1` o `Custom 2`.
+
 ## Export ZIP/PDF
 
-L'export chat e in lavorazione locale se non risulta ancora committato.
+L'export chat e disponibile dal menu `...` di ogni chat.
 
 Obiettivo:
 
@@ -242,9 +274,9 @@ Obiettivo:
 ZIP:
 
 - deve contenere una cartella unica
-- dentro: `.md`, `assets/`, `README_IMPORT.txt`
+- dentro: `.md` e, se presenti immagini o documenti allegati, `assets/`
 - il file `.md` deve avere nome chat + data chat
-- le immagini devono stare in `assets/`
+- immagini e documenti originali allegati devono stare in `assets/`
 - per Obsidian bisogna estrarre tutta la cartella dentro il vault, non importare solo il `.md`
 
 PDF:
@@ -258,6 +290,17 @@ File coinvolto:
 ```text
 services\export_service.py
 ```
+
+## Manutenzione Database
+
+La finestra Configure include una tab `Manutenzione`.
+
+Funzioni:
+
+- `Apri cartella dati`: apre in Explorer la cartella che contiene `config.json` e `chat_history.db`
+- `Compatta database`: elimina fisicamente le sessioni gia marcate come cancellate e poi esegue `VACUUM`
+
+Nota importante: cancellare una chat dalla UI fa soft-delete. Lo spazio su disco viene recuperato solo quando si usa `Compatta database`.
 
 ## Regole pratiche
 

@@ -17,7 +17,16 @@ DEFAULT_CONFIG = {
         "LM Studio": "http://localhost:1234/v1",
         "Llama.cpp": "http://localhost:8033/v1",
         "Llama-Swap": "http://localhost:8080/v1",
-        "Compatibile OpenAI": "",
+        "Custom 1": "",
+        "Custom 2": "",
+    },
+    "api_keys": {
+        "Ollama": "",
+        "LM Studio": "",
+        "Llama.cpp": "",
+        "Llama-Swap": "",
+        "Custom 1": "",
+        "Custom 2": "",
     },
     "prompts": {
         "copied_text": "",
@@ -98,6 +107,8 @@ def load_runtime_config(config_path=CONFIG_FILE):
                 return {
                     "language": data.get("language", DEFAULT_CONFIG["language"]),
                     "backends": {**DEFAULT_CONFIG["backends"], **data.get("backends", {})},
+                    "api_keys": {**DEFAULT_CONFIG["api_keys"], **data.get("api_keys", {})},
+                    "backend_display_names": data.get("backend_display_names", {}),
                     "prompts": {**DEFAULT_CONFIG["prompts"], **data.get("prompts", {})},
                 }
         except Exception:
@@ -105,6 +116,8 @@ def load_runtime_config(config_path=CONFIG_FILE):
     return {
         "language": DEFAULT_CONFIG["language"],
         "backends": DEFAULT_CONFIG["backends"].copy(),
+        "api_keys": DEFAULT_CONFIG["api_keys"].copy(),
+        "backend_display_names": {},
         "prompts": DEFAULT_CONFIG["prompts"].copy(),
     }
 

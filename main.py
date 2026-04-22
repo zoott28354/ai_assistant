@@ -2095,13 +2095,19 @@ class MainApp:
     def open_about_dialog(self):
         self.tray.contextMenu().hide()
         parent = self.chat_window if self.chat_window.isVisible() else None
-        dialog = AboutDialog(self.language, parent)
+        dialog = AboutDialog(
+            self.language,
+            parent,
+            on_check_updates=lambda: self.check_for_updates(parent=dialog, hide_tray=False),
+        )
         dialog.setWindowIcon(self.app_icon)
         dialog.exec()
 
-    def check_for_updates(self):
-        self.tray.contextMenu().hide()
-        parent = self.chat_window if self.chat_window.isVisible() else None
+    def check_for_updates(self, parent=None, hide_tray=True):
+        if hide_tray:
+            self.tray.contextMenu().hide()
+        if parent is None:
+            parent = self.chat_window if self.chat_window.isVisible() else None
         latest_url = f"{APP_URL}/releases/latest"
 
         try:

@@ -174,13 +174,15 @@ Principio corretto:
 Installazione installer Windows:
 
 ```text
-app in C:\Program Files\AI Assistant
+app per utente corrente oppure per tutti gli utenti
 dati utente in %AppData%\AI Assistant
 ```
 
-I dati utente restano separati per ogni account Windows anche se l'app e installata in `Program Files`.
+L'installer usa la scelta Inno Setup `utente corrente / tutti gli utenti`: per tutti gli utenti l'app va in `C:\Program Files\AI Assistant`, mentre per utente corrente usa il percorso app per-user di Windows.
 
-L'installer non propone piu la modalita portable. La task opzionale `Avvia all'avvio di Windows` registra l'app in `HKLM\Software\Microsoft\Windows\CurrentVersion\Run`.
+I dati utente restano sempre separati per ogni account Windows in `%AppData%\AI Assistant`.
+
+L'installer non propone piu la modalita portable. La task opzionale `Avvia all'avvio di Windows` registra l'app in `HKCU` o `HKLM` tramite root Inno `HKA`, in base al tipo di installazione scelto.
 
 Installazione portable legacy/manuale:
 

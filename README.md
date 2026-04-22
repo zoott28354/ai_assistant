@@ -43,7 +43,7 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 - 🧭 The active tray model/backend is used when you continue an older chat, so resumed sessions follow your current tray selection.
 - 📸 `Analyze Area` uses the native Windows snipping flow for better practical results, including HDR-friendly capture behavior.
 - 🌍 The interface is available in Italian, English, Spanish, French, German, Portuguese, Russian, Japanese, and Simplified Chinese.
-- ℹ️ The tray includes multilingual `About` and `Check for updates` actions, and the installer is multilingual too.
+- ℹ️ The tray includes a multilingual `About` panel with a `Check for updates` button, and the installer is multilingual too.
 
 ## 🛠️ Main features
 
@@ -248,11 +248,11 @@ AI Assistant stores its data locally on your machine.
 - `config.json`: backend URLs, active backend/model selection, interface language, and custom tray prompt templates
 - `chat_history.db`: persistent SQLite chat history, including image-based analysis sessions, original attached documents, and rendered PDF pages when OCR/vision fallback is needed
 
-The Windows installer installs the app in `Program Files` and stores user data separately in `%AppData%\AI Assistant`.
+The Windows installer can install the app either for the current user or for all users. A current-user install uses the Windows per-user app location, while an all-users install uses `Program Files`.
 
-If multiple Windows users launch the same installed app, each user gets a separate `%AppData%\AI Assistant` folder with their own configuration and chat history.
+User data is always stored separately in `%AppData%\AI Assistant`, so each Windows account gets its own configuration and chat history even when the app is installed for all users.
 
-During setup, you can optionally enable launch at Windows startup. During uninstall, the setup asks whether user data should also be removed.
+During setup, the installer reuses a previous install path when it detects an older AI Assistant installation with the same app id. You can also optionally enable launch at Windows startup. During uninstall, the setup asks whether user data should also be removed.
 
 If you delete large chats or PDF/image-heavy sessions, use `Configure > Maintenance > Compact database` to physically reclaim disk space. The same panel can open the local data folder in Explorer.
 
@@ -293,8 +293,8 @@ v3.5.1 is a more mature version than the previous releases, especially in:
 - chat attachments for images, documents, and PDFs
 - scanned PDF OCR/vision fallback through rendered page images
 - local database maintenance tools
-- installer in `Program Files` with per-user data in `%AppData%`
-- tray-based update checking through GitHub Releases
+- installer with current-user/all-users choice and per-user data in `%AppData%`
+- About-panel update checking through GitHub Releases
 - clearer model/backend behavior when resuming older chats
 
 If you use local AI backends every day from the desktop, this version is aimed at being more reliable, more readable, and more comfortable in real use, not just in demos.

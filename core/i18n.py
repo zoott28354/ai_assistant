@@ -1300,6 +1300,17 @@ I18N = {
         "ja": "GitHub",
         "zh": "GitHub",
     },
+    "about_check_updates": {
+        "it": "Controlla aggiornamenti",
+        "en": "Check for updates",
+        "es": "Buscar actualizaciones",
+        "fr": "Rechercher des mises a jour",
+        "de": "Nach Updates suchen",
+        "pt": "Verificar atualizacoes",
+        "ru": "Проверить обновления",
+        "ja": "更新を確認",
+        "zh": "检查更新",
+    },
     "error": {
         "it": "Errore",
         "en": "Error",

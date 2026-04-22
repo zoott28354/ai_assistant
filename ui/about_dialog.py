@@ -5,9 +5,10 @@ from core.i18n import APP_NAME, APP_VERSION, tr
 
 
 class AboutDialog(QDialog):
-    def __init__(self, language="it", parent=None):
+    def __init__(self, language="it", parent=None, on_check_updates=None):
         super().__init__(parent)
         self.language = language
+        self.on_check_updates = on_check_updates
         self.setWindowTitle(tr("about_title", self.language))
         self.setWindowFlags(
             Qt.WindowType.Dialog
@@ -105,8 +106,17 @@ class AboutDialog(QDialog):
         layout.addStretch(1)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+        update_button = buttons.addButton(
+            tr("about_check_updates", self.language),
+            QDialogButtonBox.ButtonRole.ActionRole,
+        )
+        update_button.clicked.connect(self.check_updates)
         ok_button = buttons.button(QDialogButtonBox.StandardButton.Ok)
         if ok_button:
             ok_button.setText(tr("ok", self.language))
         buttons.accepted.connect(self.accept)
         layout.addWidget(buttons)
+
+    def check_updates(self):
+        if self.on_check_updates:
+            self.on_check_updates()

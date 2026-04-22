@@ -39,7 +39,11 @@ class AIWorker(QThread):
                 request_history.append(prepared)
 
             if self.backend == self.ollama_backend_name:
-                res = ollama.chat(model=self.model, messages=request_history, stream=False)
+                base_url = self.backend_urls.get("backends", {}).get(self.backend, "").strip()
+                if not base_url:
+                    raise Exception(tr("url_not_configured", self.language))
+                client = ollama.Client(host=base_url)
+                res = client.chat(model=self.model, messages=request_history, stream=False)
                 answer = res["message"]["content"]
             else:
                 base_url = self.backend_urls.get("backends", {}).get(self.backend, "")

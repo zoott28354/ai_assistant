@@ -17,6 +17,7 @@ __pycache__/
 # File di sistema
 .DS_Store
 Thumbs.db
+.vs/
 
 # Eventuali cartelle di build se userai PyInstaller in futuro
 dist/

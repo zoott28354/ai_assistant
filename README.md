@@ -1,4 +1,7 @@
-# 👁️ Sirius AI Tray Assistant v3.6.0
+<h1>
+  <img src="docs/assets/sirius-icon.png" alt="Sirius AI Tray Assistant icon" width="32" height="32" style="vertical-align: -5px;" />
+  Sirius AI Tray Assistant v3.6.0
+</h1>
 
 [![Version](https://img.shields.io/badge/version-3.6.0-1f8ceb.svg)](https://github.com/zoott28354/sirius-ai-tray-assistant/releases/tag/v3.6.0)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0f172a.svg)](https://github.com/zoott28354/sirius-ai-tray-assistant)

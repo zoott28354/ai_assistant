@@ -96,7 +96,9 @@ Non committare mai:
 - `installer_output/`
 - `start_sirius_ai_tray_assistant.bat`
 - `__pycache__/`
+- `.vs/`
 - `.tmp/`
+- `*.log`
 
 `config.json` contiene impostazioni runtime personali, come backend, modello attivo, lingua e prompt personalizzati.
 

@@ -3,12 +3,13 @@ import os
 import shutil
 import sys
 
-from .i18n import APP_NAME
+from .app_meta import APP_NAME
 
 PORTABLE_MARKER = "portable_mode.flag"
 HISTORY_FILE_NAME = "history_db.json"
 CONFIG_FILE_NAME = "config.json"
 CHAT_DB_FILE_NAME = "chat_history.db"
+LEGACY_APP_NAMES = ("AI Assistant",)
 
 DEFAULT_CONFIG = {
     "language": "it",
@@ -44,13 +45,17 @@ def get_runtime_dir():
 
 
 def get_user_data_dir():
+    return get_user_data_dir_for_app(APP_NAME)
+
+
+def get_user_data_dir_for_app(app_name):
     if sys.platform.startswith("win"):
         base_dir = os.environ.get("APPDATA") or os.path.expanduser("~")
     elif sys.platform == "darwin":
         base_dir = os.path.join(os.path.expanduser("~"), "Library", "Application Support")
     else:
         base_dir = os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config")
-    return os.path.join(base_dir, APP_NAME)
+    return os.path.join(base_dir, app_name)
 
 
 def get_app_data_dir():
@@ -65,6 +70,16 @@ def get_app_data_dir():
 
 def ensure_app_data_dir():
     data_dir = get_app_data_dir()
+    if not os.path.exists(data_dir):
+        for legacy_name in LEGACY_APP_NAMES:
+            legacy_dir = get_user_data_dir_for_app(legacy_name)
+            if os.path.exists(legacy_dir):
+                try:
+                    shutil.copytree(legacy_dir, data_dir)
+                    return data_dir
+                except Exception as exc:
+                    print(f"Warning: unable to migrate data from {legacy_dir}: {exc}")
+                    break
     os.makedirs(data_dir, exist_ok=True)
     return data_dir
 

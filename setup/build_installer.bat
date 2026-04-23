@@ -6,7 +6,7 @@ for %%I in ("%SCRIPT_DIR%..") do set "ROOT_DIR=%%~fI"
 
 pushd "%ROOT_DIR%"
 
-echo === AI Assistant installer build ===
+echo === Sirius AI Tray Assistant installer build ===
 
 if not exist venv\Scripts\python.exe (
     echo [ERROR] Virtual environment not found.

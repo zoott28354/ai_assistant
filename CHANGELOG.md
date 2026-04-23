@@ -1,6 +1,16 @@
 # Changelog
 
-All notable changes to AI Assistant are documented here.
+All notable changes to Sirius AI Tray Assistant are documented here.
+
+## v3.6.0
+
+- Renamed the project from AI Assistant to Sirius AI Tray Assistant.
+- Updated application metadata, installer output name, About panel, README links, and GitHub repository references for the new project identity.
+- Changed the project license from MIT to GNU GPL v3 or later and added a NOTICE file.
+- Added safe migration from the legacy `%AppData%\AI Assistant` data folder to `%AppData%\Sirius AI Tray Assistant`.
+- Updated uninstall cleanup so choosing to remove user data also removes the legacy data folder when present.
+- Replaced native browser-style chat confirm/prompt popups with an integrated in-chat modal for rename/delete actions.
+- Harmonized dialog buttons with a lighter text-style layout across confirmation, configuration, and About dialogs.
 
 ## v3.5.2
 

@@ -145,12 +145,18 @@ class ConfigDialog(QDialog):
                 background-color: #284766;
             }
             QDialogButtonBox QPushButton {
-                min-width: 118px;
-                background-color: #1c7ed6;
+                min-width: 0;
+                min-height: 34px;
+                padding: 0 8px;
+                background-color: transparent;
+                color: #b9cadb;
                 border: none;
+                border-radius: 8px;
+                font-weight: 800;
             }
             QDialogButtonBox QPushButton:hover {
-                background-color: #2589e3;
+                background-color: transparent;
+                color: #ffffff;
             }
         """)
 

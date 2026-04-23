@@ -1,1 +1,1 @@
-"""UI modules for AI Assistant."""
+"""UI modules for Sirius AI Tray Assistant."""

@@ -1,12 +1,12 @@
-# 👁️ AI Assistant v3.5.2
+# 👁️ Sirius AI Tray Assistant v3.6.0
 
-[![Version](https://img.shields.io/badge/version-3.5.2-1f8ceb.svg)](https://github.com/zoott28354/ai_assistant/releases/tag/v3.5.2)
-[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0f172a.svg)](https://github.com/zoott28354/ai_assistant)
-[![License](https://img.shields.io/badge/license-MIT-16a34a.svg)](https://github.com/zoott28354/ai_assistant/blob/main/LICENSE)
-[![Local First](https://img.shields.io/badge/local--first-yes-7c3aed.svg)](https://github.com/zoott28354/ai_assistant)
-[![UI Languages](https://img.shields.io/badge/UI%20languages-9-f59e0b.svg)](https://github.com/zoott28354/ai_assistant)
+[![Version](https://img.shields.io/badge/version-3.6.0-1f8ceb.svg)](https://github.com/zoott28354/sirius-ai-tray-assistant/releases/tag/v3.6.0)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0f172a.svg)](https://github.com/zoott28354/sirius-ai-tray-assistant)
+[![License](https://img.shields.io/badge/license-GPL--3.0--or--later-16a34a.svg)](https://github.com/zoott28354/sirius-ai-tray-assistant/blob/main/LICENSE)
+[![Local First](https://img.shields.io/badge/local--first-yes-7c3aed.svg)](https://github.com/zoott28354/sirius-ai-tray-assistant)
+[![UI Languages](https://img.shields.io/badge/UI%20languages-9-f59e0b.svg)](https://github.com/zoott28354/sirius-ai-tray-assistant)
 
-AI Assistant is a local desktop companion for Windows built for real day-to-day use: capture part of the screen, read copied text, send prompts or images to your local models, and keep a persistent conversation history ready for follow-up.
+Sirius AI Tray Assistant is a local desktop companion for Windows built for real day-to-day use: capture part of the screen, read copied text, send prompts or images to your local models, and keep a persistent conversation history ready for follow-up.
 
 The idea is simple: keep an assistant in the system tray that is always ready to translate, explain, analyze images, inspect on-screen errors, and continue the flow in chat without relying on the cloud.
 
@@ -15,12 +15,12 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="docs/screenshots/tray-meny-new.png" alt="AI Assistant tray menu" width="92%" />
+      <img src="docs/screenshots/tray-meny-new.png" alt="Sirius AI Tray Assistant tray menu" width="92%" />
       <br />
       <sub>Tray menu with backend and model selection</sub>
     </td>
     <td align="center" width="50%">
-      <img src="docs/screenshots/Chat.png" alt="AI Assistant chat window" width="92%" />
+      <img src="docs/screenshots/Chat.png" alt="Sirius AI Tray Assistant chat window" width="92%" />
       <br />
       <sub>Main chat window with persistent sessions</sub>
     </td>
@@ -82,7 +82,7 @@ The idea is simple: keep an assistant in the system tray that is always ready to
 
 ## 🧭 How it works
 
-1. Download `AI_Assistant_Setup_v3.5.2.exe` from [Releases](https://github.com/zoott28354/ai_assistant/releases).
+1. Download `Sirius_AI_Tray_Assistant_Setup_v3.6.0.exe` from [Releases](https://github.com/zoott28354/sirius-ai-tray-assistant/releases).
 2. Install the app.
 3. Launch it and look for the icon in the system tray.
 4. With a right click you can:
@@ -117,19 +117,19 @@ The app is designed for local or self-hosted backends that expose models already
 
 You can change them directly from the interface without editing files manually. Custom endpoints also support an optional display name and API key.
 
-Context length and generation parameters are handled by the backend you choose. For example, Ollama, LM Studio, Llama.cpp, Llama-Swap, vLLM, and LocalAI each expose their own settings for context windows, memory use, and model runtime behavior. AI Assistant preserves the chat history and sends it to the selected backend, but it does not override those backend limits.
+Context length and generation parameters are handled by the backend you choose. For example, Ollama, LM Studio, Llama.cpp, Llama-Swap, vLLM, and LocalAI each expose their own settings for context windows, memory use, and model runtime behavior. Sirius AI Tray Assistant preserves the chat history and sends it to the selected backend, but it does not override those backend limits.
 
 ## 🌐 Network and LAN FAQ
 
 ### Can I run the AI backend on another PC in my local network?
 
-Yes. AI Assistant can connect to a backend running on another machine in the same LAN, as long as that backend listens on the network interface and the firewall allows the port.
+Yes. Sirius AI Tray Assistant can connect to a backend running on another machine in the same LAN, as long as that backend listens on the network interface and the firewall allows the port.
 
 Example LAN setup:
 
 - PC A runs Ollama, LM Studio, Llama.cpp, or another compatible backend
-- PC B runs AI Assistant
-- AI Assistant is configured with the LAN IP address of PC A, such as `192.168.1.30`
+- PC B runs Sirius AI Tray Assistant
+- Sirius AI Tray Assistant is configured with the LAN IP address of PC A, such as `192.168.1.30`
 
 ### How should I configure Ollama over LAN?
 
@@ -170,9 +170,9 @@ The difference is intentional:
 - `Ollama` uses Ollama's native API: `http://host:11434/api/chat`
 - `Custom 1` / `Custom 2` use OpenAI-compatible APIs: `http://host:11434/v1/chat/completions`
 
-### How do I test a LAN backend before using it in AI Assistant?
+### How do I test a LAN backend before using it in Sirius AI Tray Assistant?
 
-From the PC running AI Assistant, first test the port:
+From the PC running Sirius AI Tray Assistant, first test the port:
 
 ```powershell
 Test-NetConnection 192.168.1.30 -Port 11434
@@ -196,7 +196,7 @@ If the model list works but chat does not, check that the selected model name ma
 
 LM Studio can also work over LAN if its server is configured to listen on the network and Windows Firewall allows the port.
 
-In AI Assistant, a LAN LM Studio endpoint usually looks like:
+In Sirius AI Tray Assistant, a LAN LM Studio endpoint usually looks like:
 
 ```text
 LM Studio: http://192.168.1.30:1234/v1
@@ -228,7 +228,7 @@ This section is only for people who want to clone the repository and run the pro
 1. Clone or download the repository.
 2. Run [`setup.bat`](setup.bat).
 3. Wait for the virtual environment and dependencies to be installed.
-4. Launch the app with `start_ai_assistant.bat`.
+4. Launch the app with `start_sirius_ai_tray_assistant.bat`.
 
 The root `setup.bat` is the source setup entry point. Packaging files for the Windows installer are kept in the [`setup/`](setup) folder.
 
@@ -243,16 +243,16 @@ python -m venv venv
 
 ## 💾 Persistence and local files
 
-AI Assistant stores its data locally on your machine.
+Sirius AI Tray Assistant stores its data locally on your machine.
 
 - `config.json`: backend URLs, active backend/model selection, interface language, and custom tray prompt templates
 - `chat_history.db`: persistent SQLite chat history, including image-based analysis sessions, original attached documents, and rendered PDF pages when OCR/vision fallback is needed
 
 The Windows installer can install the app either for the current user or for all users. A current-user install uses the Windows per-user app location, while an all-users install uses `Program Files`.
 
-User data is always stored separately in `%AppData%\AI Assistant`, so each Windows account gets its own configuration and chat history even when the app is installed for all users.
+User data is always stored separately in `%AppData%\Sirius AI Tray Assistant`, so each Windows account gets its own configuration and chat history even when the app is installed for all users.
 
-During setup, the installer reuses a previous install path when it detects an older AI Assistant installation with the same app id. You can also optionally enable launch at Windows startup. During uninstall, the setup asks whether user data should also be removed.
+During setup, the installer reuses a previous install path when it detects an older Sirius AI Tray Assistant installation with the same app id. You can also optionally enable launch at Windows startup. During uninstall, the setup asks whether user data should also be removed.
 
 If you delete large chats or PDF/image-heavy sessions, use `Configure > Maintenance > Compact database` to physically reclaim disk space. The same panel can open the local data folder in Explorer.
 
@@ -262,8 +262,8 @@ For advanced users running from source, the project files remain available in th
 
 If you want a ready-to-use build:
 
-1. Go to [Releases](https://github.com/zoott28354/ai_assistant/releases)
-2. Download `AI_Assistant_Setup_v3.5.2.exe`
+1. Go to [Releases](https://github.com/zoott28354/sirius-ai-tray-assistant/releases)
+2. Download `Sirius_AI_Tray_Assistant_Setup_v3.6.0.exe`
 3. Install the app normally
 4. If Windows SmartScreen appears, choose `More info` and then `Run anyway`
 
@@ -275,12 +275,15 @@ Created and maintained by `zoott28354`.
 
 ## 📄 License
 
-This project is released under the MIT license.
+This project is released under the GNU General Public License v3.0 or later.
 See [`LICENSE`](LICENSE) for the full text.
+
+Sirius AI Tray Assistant, previously known as AI Assistant, was originally created by `zoott28354`.
+Forks and modified versions must keep the copyright and license notices required by the GPL.
 
 ## 📈 Project status
 
-v3.5.2 is a more mature version than the previous releases, especially in:
+v3.6.0 is a more mature version than the previous releases, especially in:
 
 - chat UI
 - session management

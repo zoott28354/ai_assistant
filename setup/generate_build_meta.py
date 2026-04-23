@@ -66,6 +66,7 @@ def write_inno_meta() -> None:
 #define MyAppPublisher "{APP_PUBLISHER}"
 #define MyAppURL "{APP_URL}"
 #define MyAppExeName "{APP_SLUG}.exe"
+#define MyAppDistName "{APP_SLUG}"
 #define MyOutputBaseFilename "{APP_SLUG}_Setup_v" + MyAppVersion
 """
     (SETUP_DIR / "app_meta.iss").write_text(content, encoding="utf-8")

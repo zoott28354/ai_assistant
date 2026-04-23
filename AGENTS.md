@@ -4,7 +4,7 @@ Note operative per Codex e per qualunque agente che lavori su questo progetto.
 
 ## Progetto
 
-AI Assistant e una app desktop Windows tray-first per usare modelli AI locali.
+Sirius AI Tray Assistant e una app desktop Windows tray-first per usare modelli AI locali.
 
 La tray e il centro dell'app:
 
@@ -45,7 +45,7 @@ setup.bat
 Avvio dopo il setup:
 
 ```powershell
-start_ai_assistant.bat
+start_sirius_ai_tray_assistant.bat
 ```
 
 Avvio diretto se l'ambiente e gia pronto:
@@ -75,13 +75,13 @@ cmd /c setup\build_installer.bat
 Output installer:
 
 ```text
-installer_output\AI_Assistant_Setup_v3.5.2.exe
+installer_output\Sirius_AI_Tray_Assistant_Setup_v3.6.0.exe
 ```
 
 Aggiornamento asset release GitHub:
 
 ```powershell
-gh release upload v3.5.2 installer_output\AI_Assistant_Setup_v3.5.2.exe --repo zoott28354/ai_assistant --clobber
+gh release upload v3.6.0 installer_output\Sirius_AI_Tray_Assistant_Setup_v3.6.0.exe --repo zoott28354/sirius-ai-tray-assistant --clobber
 ```
 
 ## File locali da non committare
@@ -94,7 +94,7 @@ Non committare mai:
 - `build/`
 - `dist/`
 - `installer_output/`
-- `start_ai_assistant.bat`
+- `start_sirius_ai_tray_assistant.bat`
 - `__pycache__/`
 - `.tmp/`
 
@@ -135,7 +135,7 @@ main
 Remote:
 
 ```text
-origin https://github.com/zoott28354/ai_assistant.git
+origin https://github.com/zoott28354/sirius-ai-tray-assistant.git
 ```
 
 Prima di lavorare controllare sempre:
@@ -147,14 +147,14 @@ git status -sb
 La release pubblica attuale e:
 
 ```text
-v3.5.2
+v3.6.0
 ```
 
 Quando si cambia codice che finisce nell'installer:
 
 1. commit e push su `main`
 2. build installer con `setup\build_installer.bat`
-3. upload asset release `v3.5.2` con `gh release upload ... --clobber`
+3. upload asset release `v3.6.0` con `gh release upload ... --clobber`
 
 ## Note architetturali
 
@@ -175,12 +175,12 @@ Installazione installer Windows:
 
 ```text
 app per utente corrente oppure per tutti gli utenti
-dati utente in %AppData%\AI Assistant
+dati utente in %AppData%\Sirius AI Tray Assistant
 ```
 
-L'installer usa la scelta Inno Setup `utente corrente / tutti gli utenti`: per tutti gli utenti l'app va in `C:\Program Files\AI Assistant`, mentre per utente corrente usa il percorso app per-user di Windows.
+L'installer usa la scelta Inno Setup `utente corrente / tutti gli utenti`: per tutti gli utenti l'app va in `C:\Program Files\Sirius AI Tray Assistant`, mentre per utente corrente usa il percorso app per-user di Windows.
 
-I dati utente restano sempre separati per ogni account Windows in `%AppData%\AI Assistant`.
+I dati utente restano sempre separati per ogni account Windows in `%AppData%\Sirius AI Tray Assistant`.
 
 L'installer non propone piu la modalita portable. La task opzionale `Avvia all'avvio di Windows` registra l'app in `HKCU` o `HKLM` tramite root Inno `HKA`, in base al tipo di installazione scelto.
 

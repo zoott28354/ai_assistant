@@ -1,6 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout
 
+from core.app_meta import APP_LICENSE, APP_URL
 from core.i18n import APP_NAME, APP_VERSION, tr
 
 
@@ -53,22 +54,21 @@ class AboutDialog(QDialog):
                 text-decoration: underline;
             }
             QDialogButtonBox QPushButton {
-                min-width: 168px;
-                min-height: 38px;
-                padding: 0 18px;
-                background-color: #1c7ed6;
-                color: #ffffff;
+                min-width: 0;
+                min-height: 34px;
+                padding: 0 8px;
+                background-color: transparent;
+                color: #b9cadb;
                 border: none;
-                border-radius: 10px;
-                font-weight: 700;
+                border-radius: 8px;
+                font-weight: 800;
             }
             QDialogButtonBox QPushButton:hover {
-                background-color: #2589e3;
+                background-color: transparent;
+                color: #ffffff;
             }
             """
         )
-
-        github_url = "https://github.com/zoott28354/ai_assistant"
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 22, 24, 18)
@@ -85,11 +85,11 @@ class AboutDialog(QDialog):
         description.setWordWrap(True)
 
         author = QLabel(tr("about_author", self.language, author="zoott28354"))
-        license_label = QLabel(tr("about_license", self.language, license_name="MIT"))
+        license_label = QLabel(tr("about_license", self.language, license_name=APP_LICENSE))
 
         github = QLabel(
             f'{tr("about_github", self.language)}: '
-            f'<a href="{github_url}">zoott28354/ai_assistant</a>'
+            f'<a href="{APP_URL}">zoott28354/sirius-ai-tray-assistant</a>'
         )
         github.setObjectName("about_link")
         github.setOpenExternalLinks(True)

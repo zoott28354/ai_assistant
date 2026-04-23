@@ -6,7 +6,7 @@ for %%I in ("%SCRIPT_DIR%..") do set "ROOT_DIR=%%~fI"
 
 pushd "%ROOT_DIR%"
 
-echo === AI Assistant source setup ===
+echo === Sirius AI Tray Assistant source setup ===
 
 if not exist venv (
     echo Creating virtual environment...
@@ -20,13 +20,13 @@ venv\Scripts\python.exe -m pip install -r requirements.txt
 echo Creating local launcher...
 (
 echo @echo off
-echo echo Starting AI Assistant...
+echo echo Starting Sirius AI Tray Assistant...
 echo start venv\Scripts\pythonw.exe main.py
-) > start_ai_assistant.bat
+) > start_sirius_ai_tray_assistant.bat
 
 echo.
 echo Setup completed.
-echo You can now use start_ai_assistant.bat to launch the app locally.
+echo You can now use start_sirius_ai_tray_assistant.bat to launch the app locally.
 pause
 
 popd

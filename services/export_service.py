@@ -19,7 +19,7 @@ def safe_filename(value, fallback="chat"):
 
 
 def default_export_name(session, extension):
-    label = safe_filename(session.get("label", ""), "AI Assistant chat")
+    label = safe_filename(session.get("label", ""), f"{APP_NAME} chat")
     stamp = _session_stamp(session)
     return f"{label} - {stamp}.{extension}"
 
@@ -104,7 +104,7 @@ def build_markdown(session, language="en", asset_prefix="assets"):
 
 def export_session_to_zip(session, output_path, language="en"):
     markdown_text, assets = build_markdown(session, language=language)
-    export_root = safe_filename(default_export_name(session, "export").removesuffix(".export"), "AI Assistant export")
+    export_root = safe_filename(default_export_name(session, "export").removesuffix(".export"), f"{APP_NAME} export")
     markdown_name = default_export_name(session, "md")
     with zipfile.ZipFile(output_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(f"{export_root}/{markdown_name}", markdown_text.encode("utf-8"))

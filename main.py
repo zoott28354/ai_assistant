@@ -875,6 +875,7 @@ class CodexWebChatWindow(QWidget):
 
     def build_chat_html(self):
         ui = {
+            "appName": APP_NAME,
             "assistantLocal": tr("assistant_local", self.language),
             "newChat": tr("new_chat", self.language),
             "recentSessions": tr("recent_sessions", self.language),
@@ -1172,6 +1173,81 @@ class CodexWebChatWindow(QWidget):
       font-size: 12px;
       line-height: 1.5;
     }
+    .chat-dialog-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(5, 8, 12, 0.52);
+      backdrop-filter: blur(6px);
+    }
+    .chat-dialog-backdrop.open {
+      display: flex;
+    }
+    .chat-dialog {
+      width: min(520px, calc(100vw - 48px));
+      border: 1px solid #314154;
+      border-radius: 18px;
+      background: #171e27;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
+      padding: 22px 24px 16px;
+    }
+    .chat-dialog-title {
+      color: #eef4fb;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .chat-dialog-message {
+      color: #c7d4e2;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    .chat-dialog-input {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid #344357;
+      border-radius: 12px;
+      background: #222d3b;
+      color: #edf4fb;
+      padding: 0 14px;
+      font: inherit;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 16px;
+    }
+    .chat-dialog-input:focus {
+      border-color: #5ba9ff;
+      box-shadow: 0 0 0 3px rgba(91, 169, 255, 0.14);
+    }
+    .chat-dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 18px;
+    }
+    button.chat-dialog-button {
+      min-width: auto;
+      padding: 8px 4px;
+      border-radius: 8px;
+      background: transparent;
+      color: #b9cadb;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    button.chat-dialog-button:hover {
+      background: transparent;
+      color: #ffffff;
+    }
+    button.chat-dialog-button.primary {
+      color: #78baff;
+    }
+    button.chat-dialog-button.danger {
+      color: #ff9d9d;
+    }
     .content-shell {
       min-width: 0;
       min-height: 0;
@@ -1415,7 +1491,7 @@ class CodexWebChatWindow(QWidget):
   <div class="app-shell">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <div class="brand-title">AI Assistant</div>
+        <div class="brand-title">__APP_NAME__</div>
       </div>
       <button class="new-chat-button" id="new-chat-button" type="button">__NEW_CHAT__</button>
       <div class="sidebar-section">__RECENT_SESSIONS__</div>
@@ -1448,6 +1524,17 @@ class CodexWebChatWindow(QWidget):
           </form>
         </div>
       </footer>
+    </div>
+  </div>
+  <div class="chat-dialog-backdrop" id="chat-dialog-backdrop" aria-hidden="true">
+    <div class="chat-dialog" role="dialog" aria-modal="true" aria-labelledby="chat-dialog-title">
+      <div class="chat-dialog-title" id="chat-dialog-title"></div>
+      <div class="chat-dialog-message" id="chat-dialog-message"></div>
+      <input class="chat-dialog-input" id="chat-dialog-input" type="text" />
+      <div class="chat-dialog-actions">
+        <button type="button" class="chat-dialog-button" id="chat-dialog-cancel">__CANCEL__</button>
+        <button type="button" class="chat-dialog-button primary" id="chat-dialog-ok">__OK__</button>
+      </div>
     </div>
   </div>
   <script>
@@ -1484,6 +1571,52 @@ class CodexWebChatWindow(QWidget):
       const input = document.getElementById("composer-input");
       const button = document.getElementById("composer-send");
       button.disabled = !!(latestState && latestState.busy) || (!input.value.trim() && pendingAttachments.length === 0);
+    }
+    function openChatDialog(options) {
+      return new Promise((resolve) => {
+        const backdrop = document.getElementById("chat-dialog-backdrop");
+        const title = document.getElementById("chat-dialog-title");
+        const message = document.getElementById("chat-dialog-message");
+        const input = document.getElementById("chat-dialog-input");
+        const cancel = document.getElementById("chat-dialog-cancel");
+        const ok = document.getElementById("chat-dialog-ok");
+
+        title.textContent = options.title || "";
+        message.textContent = options.message || "";
+        input.value = options.value || "";
+        input.style.display = options.input ? "block" : "none";
+        ok.classList.toggle("danger", options.danger === true);
+        ok.classList.toggle("primary", options.danger !== true);
+        backdrop.classList.add("open");
+        backdrop.setAttribute("aria-hidden", "false");
+
+        const cleanup = (value) => {
+          backdrop.classList.remove("open");
+          backdrop.setAttribute("aria-hidden", "true");
+          ok.onclick = null;
+          cancel.onclick = null;
+          backdrop.onclick = null;
+          document.removeEventListener("keydown", onKeyDown);
+          resolve(value);
+        };
+        const onKeyDown = (event) => {
+          if (event.key === "Escape") cleanup(null);
+          if (event.key === "Enter" && options.input) cleanup(input.value);
+        };
+
+        ok.onclick = () => cleanup(options.input ? input.value : true);
+        cancel.onclick = () => cleanup(null);
+        backdrop.onclick = (event) => {
+          if (event.target === backdrop) cleanup(null);
+        };
+        document.addEventListener("keydown", onKeyDown);
+        if (options.input) {
+          input.focus();
+          input.select();
+        } else {
+          ok.focus();
+        }
+      });
     }
     function renderAttachments(attachments) {
       pendingAttachments = attachments || [];
@@ -1560,10 +1693,16 @@ class CodexWebChatWindow(QWidget):
           closeAllSessionMenus();
           const timestampSuffix = new RegExp("\\\\s+\\\\(\\\\d{2}/\\\\d{2}\\\\s+\\\\d{2}:\\\\d{2}\\\\)\\\\s*$");
           const currentLabel = session.label.replace(timestampSuffix, "");
-          const renamed = window.prompt(UI.renamePrompt, currentLabel);
+          openChatDialog({
+            title: UI.rename,
+            message: UI.renamePrompt,
+            value: currentLabel,
+            input: true
+          }).then((renamed) => {
           if (renamed && renamed.trim() && bridge) {
             bridge.renameSession(session.index, renamed.trim());
           }
+          });
         });
         menu.querySelector('[data-action="export_zip"]').addEventListener("click", (event) => {
           event.stopPropagation();
@@ -1578,8 +1717,14 @@ class CodexWebChatWindow(QWidget):
         menu.querySelector('[data-action="delete"]').addEventListener("click", (event) => {
           event.stopPropagation();
           closeAllSessionMenus();
-          const confirmed = window.confirm(UI.deletePrompt.replace("{label}", session.label));
-          if (confirmed && bridge) bridge.deleteSession(session.index);
+          openChatDialog({
+            title: UI.delete,
+            message: UI.deletePrompt.replace("{label}", session.label),
+            input: false,
+            danger: true
+          }).then((confirmed) => {
+            if (confirmed && bridge) bridge.deleteSession(session.index);
+          });
         });
         item.addEventListener("click", () => {
           closeAllSessionMenus();
@@ -1716,6 +1861,7 @@ class CodexWebChatWindow(QWidget):
 </html>"""
         return (html
                 .replace("__LANG__", self.language)
+            .replace("__APP_NAME__", ui["appName"])
             .replace("__NEW_CHAT__", ui["newChat"])
             .replace("__RECENT_SESSIONS__", ui["recentSessions"])
             .replace("__SEARCH_CHATS__", ui["searchChats"])
@@ -1727,6 +1873,8 @@ class CodexWebChatWindow(QWidget):
             .replace("__COMPOSER_PLACEHOLDER__", ui["composerPlaceholder"])
             .replace("__ATTACH_FILES__", ui["attachFiles"])
             .replace("__SEND__", ui["send"])
+            .replace("__CANCEL__", tr("cancel", self.language))
+            .replace("__OK__", tr("ok", self.language))
             .replace("__UI_JSON__", json.dumps(ui, ensure_ascii=False)))
 
     def on_web_load_finished(self, ok):

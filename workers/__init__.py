@@ -1,1 +1,1 @@
-"""Worker modules for AI Assistant."""
+"""Worker modules for Sirius AI Tray Assistant."""
